@@ -1,0 +1,69 @@
+# Repairs & Maintenance — service topology
+#
+# Bindings. Position-independent; grouped here for readability.
+
+# @bind   svc_work_orders    app/services/work_orders/**
+# @bind   svc_work_orders    app/models/work_order*.rb
+# @bind   svc_dispatch       app/services/dispatch/**
+# @bind   svc_vendor_registry app/services/vendor_registry/**
+# @bind   svc_notifications  app/services/notifications/**
+# @bind   job_sla_monitor    app/jobs/sla/**
+# @infra  db_primary
+# @infra  queue_dispatch
+# @external ext_lula
+# @external ext_twilio
+# @ignore  svc_legacy_tickets "read-only until the Q4 migration lands; owner: platform"
+
+vars: {
+  d2-config: {
+    layout-engine: elk
+  }
+}
+
+direction: right
+
+tenant: Tenant App {
+  shape: person
+}
+
+platform: Repairs Platform {
+  svc_work_orders: Work Orders {
+    tooltip: app/services/work_orders
+  }
+  svc_dispatch: Dispatch
+  svc_vendor_registry: Vendor Registry
+  svc_notifications: Notifications
+  job_sla_monitor: SLA Monitor {
+    style.stroke-dash: 3
+  }
+  svc_legacy_tickets: Legacy Tickets {
+    style.opacity: 0.5
+  }
+}
+
+db_primary: Postgres {
+  shape: cylinder
+}
+
+queue_dispatch: Dispatch Queue {
+  shape: queue
+}
+
+ext_lula: Lula {
+  style.stroke-dash: 2
+}
+
+ext_twilio: Twilio {
+  style.stroke-dash: 2
+}
+
+tenant -> platform.svc_work_orders: submits request
+platform.svc_work_orders -> db_primary: persists
+platform.svc_work_orders -> queue_dispatch: enqueues
+queue_dispatch -> platform.svc_dispatch: consumes
+platform.svc_dispatch -> platform.svc_vendor_registry: selects vendor
+platform.svc_dispatch -> ext_lula: dispatches job
+platform.svc_notifications -> ext_twilio: SMS
+platform.job_sla_monitor -> db_primary: polls breaches
+platform.job_sla_monitor -> platform.svc_notifications: escalates
+platform.svc_legacy_tickets -> db_primary: reads
