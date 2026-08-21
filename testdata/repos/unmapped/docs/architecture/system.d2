@@ -1,0 +1,9 @@
+# unmapped: app/services/notifications/ exists and no node claims it. Expect 1 UNMAPPED.
+
+# @bind svc_billing  app/services/billing/**
+# @bind svc_ledger   app/services/ledger/**
+
+svc_billing: Billing
+svc_ledger: Ledger
+
+svc_billing -> svc_ledger: posts entries

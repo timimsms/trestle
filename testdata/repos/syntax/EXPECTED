@@ -1,0 +1,6 @@
+exit: 1
+violations:
+  SYNTAX  svc_search          @bind with no glob
+  SYNTAX  svc_legacy_tickets  @ignore with no reason string
+warnings: 0
+strict_exit: 1

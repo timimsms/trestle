@@ -1,0 +1,22 @@
+# syntax: two malformed directives. Expect 2 SYNTAX, exit 1, no other violation.
+
+# Both malformed lines sit alongside a well-formed directive for the same node.
+# That keeps the fixture testing directive syntax only: whether a malformed
+# directive still accounts for its node is a separate question this must not
+# quietly answer.
+
+# @bind   svc_search          app/services/search/**
+# @bind   svc_search
+# @bind   svc_legacy_tickets  app/services/legacy_tickets/**
+# @ignore svc_legacy_tickets
+# @bind   svc_billing         app/services/billing/**
+
+svc_billing: Billing
+svc_search: Search
+
+svc_legacy_tickets: Legacy Tickets {
+  style.opacity: 0.5
+}
+
+svc_billing -> svc_search: indexes invoices
+svc_legacy_tickets -> svc_billing: reads

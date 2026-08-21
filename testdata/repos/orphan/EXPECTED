@@ -1,0 +1,5 @@
+exit: 1
+violations:
+  ORPHAN  svc_reporting  app/services/reporting/**
+warnings: 0
+strict_exit: 1

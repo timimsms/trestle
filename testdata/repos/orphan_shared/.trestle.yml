@@ -1,0 +1,23 @@
+version: 1
+
+diagrams:
+  - docs/architecture/*.d2
+
+discover:
+  - app/services/*/
+
+# `shared` is an accountable exemption: enumerated (L11) and ORPHAN-checked.
+# The first three exist and stay quiet. The fourth points at a directory that
+# was deleted and must fail the build.
+shared:
+  - lib/http_client/**
+  - lib/logging/**
+  - app/middleware/**
+  - lib/legacy_pdf/**
+
+# `exclude` is a blindspot by design: never seen, so never ORPHAN-checked.
+# `**/vendor/**` matches nothing in this tree and must stay silent. That
+# asymmetry with `shared` above is the point of this fixture.
+exclude:
+  - "**/*_test.rb"
+  - "**/vendor/**"

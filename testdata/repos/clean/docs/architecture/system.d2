@@ -1,0 +1,26 @@
+# clean: every node accounted for, every discovered path owned. Expect exit 0.
+
+# @bind     svc_billing  app/services/billing/**
+# @bind     svc_ledger   app/services/ledger/**
+# @bind     adp_stripe   app/adapters/stripe_gateway/**
+# @external ext_stripe
+# @infra    db_primary
+
+direction: right
+
+svc_billing: Billing
+svc_ledger: Ledger
+adp_stripe: Stripe Gateway
+
+ext_stripe: Stripe {
+  style.stroke-dash: 2
+}
+
+db_primary: Postgres {
+  shape: cylinder
+}
+
+svc_billing -> svc_ledger: posts entries
+svc_billing -> adp_stripe: charges card
+adp_stripe -> ext_stripe: REST
+svc_ledger -> db_primary: persists

@@ -1,0 +1,10 @@
+# dangling: `svc_invoicing` was renamed to `svc_billing`; its binding was left behind.
+
+# @bind svc_billing    app/services/billing/**
+# @bind svc_ledger     app/services/ledger/**
+# @bind svc_invoicing  app/legacy/invoicing/**
+
+svc_billing: Billing
+svc_ledger: Ledger
+
+svc_billing -> svc_ledger: posts entries

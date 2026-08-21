@@ -1,0 +1,9 @@
+# orphan_shared: a stale `shared:` entry fails; a stale `exclude:` entry does not.
+
+# @bind svc_billing  app/services/billing/**
+# @bind svc_ledger   app/services/ledger/**
+
+svc_billing: Billing
+svc_ledger: Ledger
+
+svc_billing -> svc_ledger: posts entries
