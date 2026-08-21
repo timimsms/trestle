@@ -1,0 +1,7 @@
+.trestle.yml
+
+  UNMAPPED  app/services/notifications/
+            no @bind glob covers this path
+            hint: add `# @bind svc_notifications app/services/notifications/**` to a diagram, or add `app/services/notifications/**` to `shared:`
+
+1 failure, 0 warnings

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "strict": false,
+  "summary": {
+    "failures": 1,
+    "warnings": 0
+  },
+  "disabled": [],
+  "violations": [
+    {
+      "code": "UNMAPPED",
+      "severity": "fail",
+      "node": null,
+      "path": "app/services/notifications/",
+      "source": {
+        "file": ".trestle.yml",
+        "line": 0
+      },
+      "detail": "no @bind glob covers this path",
+      "hint": "add `# @bind svc_notifications app/services/notifications/**` to a diagram, or add `app/services/notifications/**` to `shared:`"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "strict": false,
+  "summary": {
+    "failures": 2,
+    "warnings": 0
+  },
+  "disabled": [],
+  "violations": [
+    {
+      "code": "SYNTAX",
+      "severity": "fail",
+      "node": "svc_search",
+      "path": null,
+      "source": {
+        "file": "docs/architecture/system.d2",
+        "line": 9
+      },
+      "detail": "@bind requires a glob",
+      "hint": "`# @bind   svc_search` should be `# @bind <node_id> <glob>`"
+    },
+    {
+      "code": "SYNTAX",
+      "severity": "fail",
+      "node": "svc_legacy_tickets",
+      "path": null,
+      "source": {
+        "file": "docs/architecture/system.d2",
+        "line": 11
+      },
+      "detail": "@ignore requires a quoted reason; an unexplained suppression is how a check dies quietly",
+      "hint": "`# @ignore svc_legacy_tickets` should be `# @ignore <node_id> \"<reason>\"`"
+    }
+  ]
+}

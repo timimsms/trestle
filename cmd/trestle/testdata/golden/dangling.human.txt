@@ -1,0 +1,7 @@
+docs/architecture/system.d2
+
+  DANGLING  svc_invoicing
+            @bind names a node that is not in docs/architecture/system.d2
+            hint: no node named `svc_invoicing` in docs/architecture/system.d2 — delete the directive at docs/architecture/system.d2:5, or add the node
+
+1 failure, 0 warnings

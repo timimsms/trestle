@@ -1,0 +1,7 @@
+docs/architecture/system.d2
+
+  ORPHAN    svc_reporting
+            @bind app/services/reporting/** matches 0 files
+            hint: renamed? `git log --diff-filter=D -- app/services/reporting`
+
+1 failure, 0 warnings

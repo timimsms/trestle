@@ -1,0 +1,11 @@
+docs/architecture/system.d2
+
+  SYNTAX    svc_search
+            @bind requires a glob
+            hint: `# @bind   svc_search` should be `# @bind <node_id> <glob>`
+
+  SYNTAX    svc_legacy_tickets
+            @ignore requires a quoted reason; an unexplained suppression is how a check dies quietly
+            hint: `# @ignore svc_legacy_tickets` should be `# @ignore <node_id> "<reason>"`
+
+2 failures, 0 warnings
