@@ -57,13 +57,71 @@ If it never fires, it is decoration and should be deleted. This is the primary M
 
 | # | Question | Needed by | Notes |
 | --- | --- | --- | --- |
-| O1 | Is glob-level binding granular enough to catch real drift? | **Day 2** | Spike 01. This is the load-bearing assumption. If it fails, the differentiator wobbles and scope must change before any build work. |
+| ~~O1~~ | ~~Is glob-level binding granular enough to catch real drift?~~ | **RESOLVED** | **Proceed, with a caveat.** See amendment below. |
 | O2 | What is the discovery rule for `UNMAPPED`? | Day 4 | Per-repo convention (`app/services/*/`) vs. heuristic. Leaning explicit config — heuristics will generate noise and noise kills adoption. |
 | ~~O3~~ | ~~Should unbound nodes warn or fail by default?~~ | **RESOLVED** | **Warn.** In the worked example `UNBOUND` fired on a queue node — not an error, a modeling gap I hadn't considered. That is prompt-shaped, not failure-shaped. Fail would have trained a suppression reflex on the first diagram written. |
 | ~~O6~~ | ~~Cross-cutting code with no single owning node.~~ | **RESOLVED** | `shared:` in config, enumerated. See L10–L12. |
 | O7 | Does enumerated `shared:` stay practical at scale? | Day 4 | L11 assumes a repo has ~5–20 shared subsystems. Unmeasured. If a real repo needs 50+ entries, enumeration is unusable and L11 needs revisiting — though 50 shared subsystems is itself a finding about the codebase, not just about Trestle. Count `lib/*/` and `app/middleware/*/` before day 4. |
 | O4 | Monorepo behavior — one binding namespace or many? | Post-MVP | Deferred unless Spike 01 surfaces it as immediate. |
 | O5 | Does the preview pane justify its build cost in v1? | Day 3 | `d2 --watch` already renders. Trestle's preview only earns its place if it overlays check status onto the diagram. If that overlay slips, cut the pane entirely. |
+
+### Amendment — O1 verdict (Spike 01)
+
+**Date:** 2026-08-16 · **Run by:** build agent, at the repo owner's direction · **Probe:** `spike/glob-binding-probe.sh`
+
+Two repos were probed. Trestle itself returned zero at every depth — it is a docs-only repo with
+one commit, so it measures nothing and is reported here only to say it was tried. The real run was
+against `paperclip` (3,172 commits, 4,007 files, all inside the window), the one local repo under
+enough structural change to produce signal.
+
+| Depth | Units today (at start) | Q2 orphan | Q3 silent | Q4 new | Signal |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 20 (5) | 1 | **0** | 16 | 17 |
+| 2 | 64 (6) | 1 | **0** | 59 | 60 |
+| 3 | 118 (13) | 0 | **0** | 105 | 105 |
+
+**Verdict: PROCEED.** The falsification criterion that would have voided the design — `Q3 > Q2`,
+silent gutting outweighing detectable drift — did not fire at any depth. Q3 was **zero
+everywhere**: no unit in this repo lost ≥70% of its files while surviving. The false-negative
+mode that kills the tool is not present here.
+
+**Caveat, recorded so it is not lost.** The signal is Q4-dominated, and Q4 is inflated: the repo
+had 5–6 units at the window start versus 20–64 today, so most of that count is a young repo
+growing rather than an established architecture drifting. Q2 — the clean-deletion signal — is
+genuinely thin (1, 1, 0). Read this as *"globs are not too coarse"* (a strong result, Q3=0),
+not as *"drift is rampant and the check will constantly fire"* (unproven). The OVERVIEW success
+criterion stays genuinely at risk and remains the MVP's evaluation gate.
+
+**Depth 2 is the right unit depth** for a monorepo of this shape — `ui/src`, `server/src`,
+`packages/db`, `packages/adapters`, `cli/src` are the boxes you would actually draw. Depth 3
+fragments into 118 units with 35 of them holding ≤2 files; that is authoring burden, not
+architecture. Seed `discover:` at depth 2 in `trestle init`.
+
+**Bears on O7.** Depth 2 yields 64 units in a 4k-file repo. If even a fifth of those are shared
+plumbing, the enumerated `shared:` list runs to ~13 entries — inside L11's assumed 5–20 range,
+so L11 survives, but only just. Re-check O7 against a second repo before v1.
+
+### Amendment — Gate B verdict (D2 AST surface)
+
+**Date:** 2026-08-16 · **d2 version:** `oss.terrastruct.com/d2 v0.7.2`
+
+**PASS — outcome 1: public AST, container paths recoverable.** `d2compiler.Compile` is public
+and stable-looking; walking `g.Root.ChildrenArray` recursively and reading `Object.AbsID()`
+recovers all **12** node IDs from `examples/repairs-platform/system.d2` with container
+qualification intact (`platform.svc_work_orders`, not `svc_work_orders`). Shapes, labels and all
+10 edges come along for free. No regex fallback needed; no D2 grammar fork.
+
+The probe surfaced **two spec gaps that Task 2 must resolve before the check engine is written**:
+
+- **New O8 — qualified vs. unqualified node IDs.** The AST yields `platform.svc_work_orders`.
+  Every directive in the worked example says `@bind svc_work_orders`. Under strict string
+  matching, *all six binds in the shipped example are `DANGLING`* and `platform` is `UNBOUND`.
+  Either the example is wrong or matching must resolve an unqualified ID against a unique
+  suffix. Resolved in GAMEPLAN as: **suffix match, ambiguity is `SYNTAX`.**
+- **New O9 — are containers nodes?** `platform` is a node in the AST with no directive, so it
+  fires `UNBOUND`, as does `tenant`. A container that groups five bound services is a grouping
+  device, not an unowned subsystem. Resolved in GAMEPLAN as: **a container whose descendants are
+  all accounted for is itself accounted for.** No new violation code; L-taxonomy stays at five.
 
 ### Deferred (named, so they don't get re-litigated)
 
