@@ -21,7 +21,10 @@ import (
 // because rendering makes no claim about whether the architecture is accurate —
 // a diagram that renders beautifully can still be a lie. That is `check`'s job.
 func newRenderCmd(stdout io.Writer, exit *int) *cobra.Command {
-	var quiet bool
+	var (
+		quiet bool
+		watch bool
+	)
 
 	cmd := &cobra.Command{
 		Use:   "render",
@@ -72,11 +75,34 @@ func newRenderCmd(stdout io.Writer, exit *int) *cobra.Command {
 				}
 				_, _ = fmt.Fprintf(stdout, "%d %s rendered\n", len(ctx.Paths), noun)
 			}
+
+			if watch {
+				abs := make([]string, 0, len(ctx.Paths))
+				for _, p := range ctx.Paths {
+					abs = append(abs, filepath.Join(ctx.Config.Root, p))
+				}
+				_, _ = fmt.Fprintf(stdout, "watching %d file(s); ctrl-c to stop\n", len(abs))
+
+				// A render failure is printed and swallowed rather than
+				// returned. A diagram is unparseable for every keystroke
+				// between `a ->` and `a -> b`, and a watcher that exited on the
+				// first syntax error would be useless for the editing it exists
+				// to support.
+				return render.Watch(cmd.Context(), abs, opt, func(ev render.Event) {
+					if ev.Err != nil {
+						_, _ = fmt.Fprintf(stdout, "%s\n", ev.Err)
+						return
+					}
+					_, _ = fmt.Fprintf(stdout, "%s -> %s\n", ev.Result.Source, ev.Result.Out)
+				})
+			}
+
 			*exit = exitClean
 			return nil
 		},
 	}
 
 	cmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "print nothing on success")
+	cmd.Flags().BoolVarP(&watch, "watch", "w", false, "re-render on save until interrupted")
 	return cmd
 }
