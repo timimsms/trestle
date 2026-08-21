@@ -25,23 +25,48 @@ codebase. An arbitrary ID makes the diagram a picture and nothing more.
 - Prefix by kind: `svc_`, `db_`, `queue_`, `ext_`, `job_`.
 - The ID should be greppable in the repo. If it isn't, it's probably wrong.
 
+### Nodes inside containers
+
+A node declared inside a container has a qualified ID — `svc_billing` inside `platform`
+is really `platform.svc_billing`. **You can write either form in a directive.** The short
+form matches as long as it is unambiguous:
+
+```d2
+# @bind svc_billing           app/services/billing/**   # ✅ resolves to platform.svc_billing
+# @bind platform.svc_billing  app/services/billing/**   # ✅ also fine, and always unambiguous
+```
+
+If the short name matches nodes in two different containers, that is a `SYNTAX` error
+naming both candidates — Trestle will not guess which one you meant. Qualify the ID to
+fix it. Matching is on whole segments, so `billing` does **not** match `svc_billing`.
+
 ## Bindings
 
 Every node needs exactly one of:
 
 ```d2
 # @bind svc_billing app/services/billing/**     # backed by code here
-# @external ext_stripe                          # deliberately outside this repo
+# @infra db_primary                             # your infrastructure, no code to point at
+# @external ext_stripe                          # third-party, outside this repo
 # @ignore old_thing "kept for migration narrative until Q4"
 ```
+
+**`@infra` and `@external` are not interchangeable.** `@external` means somebody else's
+system — Stripe, Twilio, a partner API. `@infra` means *yours*, with no code in this repo
+to bind to: a database, a queue, a cache. Marking your own Postgres `@external` says it
+belongs to a third party, which is a lie in the direction that hides things.
 
 `@ignore` requires a reason string. An unexplained suppression is how a check quietly
 dies — if the reason is hard to write, that's a signal the suppression is wrong.
 
+One directive per line. Whitespace between the fields is free, so aligning a block of
+them into columns is fine and does not change how they parse.
+
 ## For agents editing these files
 
-1. **Run `trestle explain <node_id>` before editing a node.** It shows current bindings
-   and what they match. Editing blind is how bindings rot.
+1. **Read the directives for a node before editing it.** They are plain comment lines, so
+   `grep '@' docs/architecture/system.d2` shows you every binding in the file. Editing
+   blind is how bindings rot.
 2. **Edit by node ID. Never regenerate the file.** Whole-file rewrites produce diffs no
    human will review, which defeats the purpose of the format. Targeted edits only.
 3. **Adding a node? Add its binding in the same edit.** A node without a binding is
@@ -51,6 +76,21 @@ dies — if the reason is hard to write, that's a signal the suppression is wron
    the engine's job. Cosmetic churn hides real changes.
 6. **Do not invent nodes to make a diagram look complete.** If the code isn't there, the
    box isn't there.
+7. **Do not silence a finding you cannot fix.** Deleting a `discover:` rule, widening a
+   glob until it swallows the complaint, or adding `@ignore` with a hollow reason all
+   produce a green check that means nothing. Say the check fails and why — that is a
+   better outcome than a passing check nobody can trust.
+
+## Traps
+
+- **A `;` is a statement separator in D2.** `tooltip: the pipeline; the fast one` is two
+  statements, and the second becomes a **phantom node** with the prose as its ID. The
+  diagram renders fine and the extra node is invisible in review. Keep semicolons out of
+  labels and tooltips — an em dash or a comma reads the same. Trestle catches these as
+  `UNBOUND`, which is how this rule got written.
+- **An empty directory that a `discover:` rule matches always fails.** A unit is covered
+  when at least one file under it is bound, so `mkdir app/services/inventory` with nothing
+  in it fires `UNMAPPED`. Create the directory and its first file in the same change.
 
 ## For humans
 
@@ -79,13 +119,29 @@ reads because it has forty boxes is not recoverable.
 every future subsystem that lands there, including ones that genuinely needed a box.
 List `lib/http_client/**`, `lib/logging/**`, and so on.
 
-## Rendering
+### `shared:` is not `exclude:`
+
+Both keep code off the diagram; only one stays accountable.
+
+| | Means | If the path disappears |
+| --- | --- | --- |
+| `exclude:` | Not architecturally real — tests, vendored code, generated output | Nothing. Never looked at |
+| `shared:` | Real code, deliberately owned by no node | Fails the build, like any stale binding |
+
+Reach for `exclude:` only when the answer to "is this part of the architecture?" is no.
+Real code that simply has no owning box belongs in `shared:`, where a stale entry gets
+caught. Using `exclude:` to quiet a finding is how a blindspot becomes permanent.
+
+## Running it
 
 ```bash
-trestle render --watch     # local iteration
-trestle check              # what CI runs
+trestle check     # what CI runs
 ```
 
 CI runs `trestle check` on any PR touching `docs/architecture/` or paths named in
 `discover`. A failure means the diagram and the code disagree — fixing either one is
 valid, but they must be reconciled in that PR, not deferred.
+
+`trestle explain` and `trestle render --watch` are described in the design docs but are
+**not built yet**. If you are reading this in a repo that adopted Trestle early, `check`
+is the whole tool.
