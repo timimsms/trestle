@@ -4,6 +4,7 @@
 # Node IDs are the Go package names, so every ID is greppable in the repo.
 
 # @bind   cli.cmd_trestle     cmd/trestle/**
+# @bind   cli.explain         internal/explain/**
 # @bind   cli.report          internal/report/**
 # @bind   engine.check        internal/check/**
 # @bind   engine.run          internal/run/**
@@ -38,6 +39,9 @@ cli: CLI {
   }
   report: report {
     tooltip: human + JSON, the runnable hints
+  }
+  explain: explain {
+    tooltip: the node inventory — what the tool actually parsed
   }
 }
 
@@ -85,4 +89,7 @@ inputs.walk -> repo: reads
 inputs.nodes -> ext_d2: d2compiler.Compile
 engine.run -> engine.check: listing + nodes + directives + config
 engine.check -> cli.report: violations
+engine.run -> cli.explain: the same loaded context
+engine.check -> cli.explain: violations + the glob matcher
 cli.report -> author: exit code, hints
+cli.explain -> author: node inventory, match counts, overlaps

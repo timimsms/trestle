@@ -1,0 +1,9 @@
+overlapping bindings
+
+  svc_invoicing, svc_payments
+            svc_invoicing  @bind app/services/billing/** (docs/architecture/system.d2:7)
+            svc_payments   @bind app/services/billing/payment_processor.rb (docs/architecture/system.d2:8)
+            1 path:
+              app/services/billing/payment_processor.rb
+
+1 path claimed by more than one node — legal, and never a failure

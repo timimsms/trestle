@@ -1,0 +1,17 @@
+docs/architecture/system.d2
+
+  unbound   tenant                        UNBOUND
+  container platform                      6 children
+  bound     platform.svc_work_orders      2 globs — 2 files
+  bound     platform.svc_dispatch         app/services/dispatch/** — 1 file
+  bound     platform.svc_vendor_registry  app/services/vendor_registry/** — 1 file
+  bound     platform.svc_notifications    app/services/notifications/** — 1 file
+  bound     platform.job_sla_monitor      app/jobs/sla/** — 1 file
+  ignored   platform.svc_legacy_tickets   "read-only until the Q4 migration lands; owner: platform"
+  infra     db_primary
+  infra     queue_dispatch
+  external  ext_lula
+  external  ext_twilio
+
+12 nodes: 5 bound, 2 external, 2 infra, 1 ignored, 1 container, 1 unbound
+0 failures, 1 warning — `trestle check`

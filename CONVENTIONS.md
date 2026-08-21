@@ -64,9 +64,11 @@ them into columns is fine and does not change how they parse.
 
 ## For agents editing these files
 
-1. **Read the directives for a node before editing it.** They are plain comment lines, so
-   `grep '@' docs/architecture/system.d2` shows you every binding in the file. Editing
-   blind is how bindings rot.
+1. **Run `trestle explain <node_id>` before editing a node.** It shows the node's bindings,
+   how many files each glob matches right now, and any violations against it. Run
+   `trestle explain` with no argument to see every node the tool parsed — that is how you
+   confirm the diagram contains what you think it contains, rather than inferring it from a
+   check that reported nothing. Editing blind is how bindings rot.
 2. **Edit by node ID. Never regenerate the file.** Whole-file rewrites produce diffs no
    human will review, which defeats the purpose of the format. Targeted edits only.
 3. **Adding a node? Add its binding in the same edit.** A node without a binding is
@@ -123,13 +125,79 @@ If you are an agent: a green check does not license "the diagram still matches."
 responsibilities between services, say so and update the edges, even though nothing will fail if
 you do not.
 
+## Seeing what Trestle parsed
+
+```bash
+trestle explain                    # every node, with its binding status
+trestle explain svc_billing        # one node: bindings, what they match, violations
+trestle explain --overlaps         # paths claimed by more than one node
+trestle explain --format=json      # the same, for a program
+```
+
+`explain` never fails. It exits 0 whatever it finds, so a node with violations still prints;
+`trestle check` is the command with an opinion. The one exception is a node ID that names
+nothing, which exits 2 — you asked about a box that is not there.
+
+The status column is the one-word answer to "does the tool know what is behind this box":
+
+| Status | Means |
+| --- | --- |
+| `bound` | has a `@bind`. The glob and its **current match count** are printed next to it |
+| `external` / `infra` | marked as somebody else's system, or as yours with no code here |
+| `ignored` | `@ignore`, with the reason printed so the suppression keeps justifying itself |
+| `container` | a grouping box with no directive of its own. Never reports `UNBOUND` |
+| `unbound` | a leaf with no directive at all. This is what a phantom node looks like |
+
+**`matches 0 files` is the line to look for.** It prints whether or not `ORPHAN` is switched
+on — the count is evidence, and evidence outlives the violation. Anything Trestle could not
+resolve to exactly one node is listed under **unresolved directives** at the bottom: a `@bind`
+naming a node that is not in the file, an ID that suffix-matches two nodes, or a line that did
+not parse. A binding that resolved to nothing is invisible among the nodes, so that section is
+the other half of the inventory.
+
+### For agents: the JSON
+
+`--format=json` is the shape to read before editing a diagram. One schema for all three
+questions, `"version": 1`, arrays that are `[]` and never null:
+
+```json
+{
+  "version": 1,
+  "kind": "inventory",
+  "query": null,
+  "diagrams": ["docs/architecture/system.d2"],
+  "disabled": [],
+  "summary": { "nodes": 12, "bound": 5, "unbound": 1, "overlaps": 0, "failures": 0, "warnings": 1 },
+  "nodes": [
+    {
+      "id": "platform.svc_billing",
+      "status": "bound",
+      "files": 3,
+      "bindings": [{ "glob": "app/services/billing/**", "matches": 3, "files": null }],
+      "violations": []
+    }
+  ],
+  "overlaps": [],
+  "unresolved": []
+}
+```
+
+- `kind` is `inventory`, `node` or `overlaps`. `nodes` and `overlaps` hold the answer to the
+  question asked; `summary`, `diagrams` and `disabled` always describe the whole repo.
+- A binding's `files` array is populated only for `trestle explain <node_id>`. **`null` is not
+  `[]`** — `[]` means the glob claims nothing, `null` means the list was not part of this answer.
+- `disabled` names codes set to `off` in `.trestle.yml`. A green `trestle check` on a repo with a
+  non-empty `disabled` is a check that was told not to look.
+- Node IDs are always fully qualified here, even where the directive wrote the short form.
+
 ## Traps
 
 - **A `;` is a statement separator in D2.** `tooltip: the pipeline; the fast one` is two
   statements, and the second becomes a **phantom node** with the prose as its ID. The
   diagram renders fine and the extra node is invisible in review. Keep semicolons out of
   labels and tooltips — an em dash or a comma reads the same. Trestle catches these as
-  `UNBOUND`, which is how this rule got written.
+  `UNBOUND`, and `trestle explain` lists them as `unbound` nodes with the prose as the ID,
+  which is how this rule got written.
 - **An empty directory that a `discover:` rule matches always fails.** A unit is covered
   when at least one file under it is bound, so `mkdir app/services/inventory` with nothing
   in it fires `UNMAPPED`. Create the directory and its first file in the same change.
@@ -177,13 +245,14 @@ caught. Using `exclude:` to quiet a finding is how a blindspot becomes permanent
 ## Running it
 
 ```bash
-trestle check     # what CI runs
+trestle check      # what CI runs
+trestle explain    # what you run when check surprises you
 ```
 
 CI runs `trestle check` on any PR touching `docs/architecture/` or paths named in
 `discover`. A failure means the diagram and the code disagree — fixing either one is
 valid, but they must be reconciled in that PR, not deferred.
 
-`trestle explain` and `trestle render --watch` are described in the design docs but are
-**not built yet**. If you are reading this in a repo that adopted Trestle early, `check`
-is the whole tool.
+`trestle render --watch` and `trestle init` are described in the design docs but are **not
+built yet**. If you are reading this in a repo that adopted Trestle early, `check` and
+`explain` are the whole tool.

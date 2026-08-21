@@ -1,0 +1,8 @@
+docs/architecture/system.d2
+
+  bound     svc_billing    app/services/billing/** — 2 files
+  bound     svc_ledger     app/services/ledger/** — 1 file
+  bound     svc_reporting  app/services/reporting/** — 0 files  ORPHAN
+
+3 nodes: 3 bound
+1 failure, 0 warnings — `trestle check`

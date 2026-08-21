@@ -1,0 +1,15 @@
+docs/architecture/system.d2
+
+  container billing             1 child
+  bound     billing.svc_search  app/services/billing_search/** — 1 file
+  container support             1 child
+  bound     support.svc_search  app/services/support_search/** — 1 file
+
+unresolved directives
+
+  ambiguous svc_search
+            @bind svc_search app/search/legacy/** (docs/architecture/system.d2:7)
+            ambiguous node ID; candidates: billing.svc_search, support.svc_search
+
+4 nodes: 2 bound, 2 container
+1 failure, 0 warnings — `trestle check`

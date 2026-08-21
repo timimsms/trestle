@@ -127,15 +127,25 @@ func LoadConfig(cfg *config.Config) (*Context, error) {
 	return &Context{Config: cfg, Listing: listing, Paths: paths, Diagrams: diagrams}, nil
 }
 
-// Check runs the engine over the loaded context. It makes no decisions: the
-// violations come back with severities resolved from config, and the caller
-// decides what they mean for the exit code.
-func (c *Context) Check() []check.Violation {
+// Input is the loaded context as the value the engine takes.
+//
+// It is exposed because `check` is not the only consumer of that tuple:
+// `explain` is a pure function of the same (listing, nodes, directives, config)
+// and building it a second time in `cmd` is how the two commands start
+// disagreeing about what the repo contains.
+func (c *Context) Input() check.Input {
 	files := make([]check.Entry, len(c.Listing.Entries))
 	for i, e := range c.Listing.Entries {
 		files[i] = check.Entry{Path: e.Path, IsDir: e.IsDir}
 	}
-	return check.Check(check.Input{Files: files, Diagrams: c.Diagrams, Config: c.Config})
+	return check.Input{Files: files, Diagrams: c.Diagrams, Config: c.Config}
+}
+
+// Check runs the engine over the loaded context. It makes no decisions: the
+// violations come back with severities resolved from config, and the caller
+// decides what they mean for the exit code.
+func (c *Context) Check() []check.Violation {
+	return check.Check(c.Input())
 }
 
 // MatchDiagrams resolves `diagrams:` patterns against the one listing and

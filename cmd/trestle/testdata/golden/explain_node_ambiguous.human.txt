@@ -1,0 +1,17 @@
+`svc_search` is ambiguous: it names 2 nodes
+
+docs/architecture/system.d2
+
+  bound     billing.svc_search
+            label "Invoice Search", shape rectangle, inside billing, declared line 10
+            @bind app/services/billing_search/** (docs/architecture/system.d2:3) matches 1 file
+              app/services/billing_search/index.rb
+            no violations
+
+  bound     support.svc_search
+            label "Ticket Search", shape rectangle, inside support, declared line 14
+            @bind app/services/support_search/** (docs/architecture/system.d2:4) matches 1 file
+              app/services/support_search/index.rb
+            no violations
+
+hint: qualify it — `trestle explain billing.svc_search`

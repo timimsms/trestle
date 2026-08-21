@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "kind": "inventory",
+  "query": null,
+  "diagrams": [
+    "docs/architecture/system.d2"
+  ],
+  "disabled": [],
+  "summary": {
+    "nodes": 4,
+    "bound": 2,
+    "external": 0,
+    "infra": 0,
+    "ignored": 0,
+    "container": 2,
+    "unbound": 0,
+    "bindings": 2,
+    "files": 2,
+    "overlaps": 0,
+    "unresolved": 1,
+    "failures": 1,
+    "warnings": 0
+  },
+  "nodes": [
+    {
+      "id": "billing",
+      "name": "billing",
+      "diagram": "docs/architecture/system.d2",
+      "label": "Billing Domain",
+      "shape": "rectangle",
+      "parent": null,
+      "line": 9,
+      "status": "container",
+      "files": 0,
+      "children": [
+        "billing.svc_search"
+      ],
+      "bindings": [],
+      "marks": [],
+      "violations": []
+    },
+    {
+      "id": "billing.svc_search",
+      "name": "svc_search",
+      "diagram": "docs/architecture/system.d2",
+      "label": "Invoice Search",
+      "shape": "rectangle",
+      "parent": "billing",
+      "line": 10,
+      "status": "bound",
+      "files": 1,
+      "children": [],
+      "bindings": [
+        {
+          "glob": "app/services/billing_search/**",
+          "source": {
+            "file": "docs/architecture/system.d2",
+            "line": 3
+          },
+          "matches": 1,
+          "files": null
+        }
+      ],
+      "marks": [],
+      "violations": []
+    },
+    {
+      "id": "support",
+      "name": "support",
+      "diagram": "docs/architecture/system.d2",
+      "label": "Support Domain",
+      "shape": "rectangle",
+      "parent": null,
+      "line": 13,
+      "status": "container",
+      "files": 0,
+      "children": [
+        "support.svc_search"
+      ],
+      "bindings": [],
+      "marks": [],
+      "violations": []
+    },
+    {
+      "id": "support.svc_search",
+      "name": "svc_search",
+      "diagram": "docs/architecture/system.d2",
+      "label": "Ticket Search",
+      "shape": "rectangle",
+      "parent": "support",
+      "line": 14,
+      "status": "bound",
+      "files": 1,
+      "children": [],
+      "bindings": [
+        {
+          "glob": "app/services/support_search/**",
+          "source": {
+            "file": "docs/architecture/system.d2",
+            "line": 4
+          },
+          "matches": 1,
+          "files": null
+        }
+      ],
+      "marks": [],
+      "violations": []
+    }
+  ],
+  "overlaps": [],
+  "unresolved": [
+    {
+      "kind": "@bind",
+      "node": "svc_search",
+      "glob": "app/search/legacy/**",
+      "diagram": "docs/architecture/system.d2",
+      "source": {
+        "file": "docs/architecture/system.d2",
+        "line": 7
+      },
+      "detail": "ambiguous node ID",
+      "raw": null,
+      "candidates": [
+        "billing.svc_search",
+        "support.svc_search"
+      ]
+    }
+  ]
+}

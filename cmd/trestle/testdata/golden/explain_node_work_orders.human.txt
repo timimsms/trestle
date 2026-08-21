@@ -1,0 +1,9 @@
+docs/architecture/system.d2
+
+  bound     platform.svc_work_orders
+            label "Work Orders", shape rectangle, inside platform, declared line 30
+            @bind app/services/work_orders/** (docs/architecture/system.d2:5) matches 1 file
+              app/services/work_orders/work_order_service.rb
+            @bind app/models/work_order*.rb (docs/architecture/system.d2:6) matches 1 file
+              app/models/work_order.rb
+            no violations

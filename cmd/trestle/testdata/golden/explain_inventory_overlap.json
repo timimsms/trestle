@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "kind": "inventory",
+  "query": null,
+  "diagrams": [
+    "docs/architecture/system.d2"
+  ],
+  "disabled": [],
+  "summary": {
+    "nodes": 3,
+    "bound": 2,
+    "external": 1,
+    "infra": 0,
+    "ignored": 0,
+    "container": 0,
+    "unbound": 0,
+    "bindings": 2,
+    "files": 3,
+    "overlaps": 1,
+    "unresolved": 0,
+    "failures": 0,
+    "warnings": 0
+  },
+  "nodes": [
+    {
+      "id": "svc_invoicing",
+      "name": "svc_invoicing",
+      "diagram": "docs/architecture/system.d2",
+      "label": "Invoicing",
+      "shape": "rectangle",
+      "parent": null,
+      "line": 11,
+      "status": "bound",
+      "files": 3,
+      "children": [],
+      "bindings": [
+        {
+          "glob": "app/services/billing/**",
+          "source": {
+            "file": "docs/architecture/system.d2",
+            "line": 7
+          },
+          "matches": 3,
+          "files": null
+        }
+      ],
+      "marks": [],
+      "violations": []
+    },
+    {
+      "id": "svc_payments",
+      "name": "svc_payments",
+      "diagram": "docs/architecture/system.d2",
+      "label": "Payments",
+      "shape": "rectangle",
+      "parent": null,
+      "line": 12,
+      "status": "bound",
+      "files": 1,
+      "children": [],
+      "bindings": [
+        {
+          "glob": "app/services/billing/payment_processor.rb",
+          "source": {
+            "file": "docs/architecture/system.d2",
+            "line": 8
+          },
+          "matches": 1,
+          "files": null
+        }
+      ],
+      "marks": [],
+      "violations": []
+    },
+    {
+      "id": "ext_stripe",
+      "name": "ext_stripe",
+      "diagram": "docs/architecture/system.d2",
+      "label": "Stripe",
+      "shape": "rectangle",
+      "parent": null,
+      "line": 14,
+      "status": "external",
+      "files": 0,
+      "children": [],
+      "bindings": [],
+      "marks": [
+        {
+          "kind": "@external",
+          "reason": null,
+          "source": {
+            "file": "docs/architecture/system.d2",
+            "line": 9
+          }
+        }
+      ],
+      "violations": []
+    }
+  ],
+  "overlaps": [
+    {
+      "path": "app/services/billing/payment_processor.rb",
+      "nodes": [
+        {
+          "node": "svc_invoicing",
+          "glob": "app/services/billing/**",
+          "source": {
+            "file": "docs/architecture/system.d2",
+            "line": 7
+          }
+        },
+        {
+          "node": "svc_payments",
+          "glob": "app/services/billing/payment_processor.rb",
+          "source": {
+            "file": "docs/architecture/system.d2",
+            "line": 8
+          }
+        }
+      ]
+    }
+  ],
+  "unresolved": []
+}
