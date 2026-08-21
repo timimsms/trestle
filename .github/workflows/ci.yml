@@ -39,6 +39,15 @@ jobs:
       - name: bench core
         run: go test -run=XXX -bench=. -benchmem ./internal/check/... || true
 
+      # Trestle checks Trestle, --strict, as a required job. If this repo will
+      # not hold itself to the standard it recommends, it has no business
+      # recommending it. This is also the only check in CI whose config was not
+      # written to make something pass, so it is the one that can still fail
+      # for a reason nobody anticipated — which is the project's own success
+      # criterion, and worth catching on a PR rather than in a demo.
+      - name: self-check
+        run: make self-check
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -47,6 +56,11 @@ jobs:
         with:
           go-version: '1.25'
           cache: true
-      - uses: golangci/golangci-lint-action@v6
+      # v8 is the first action release that understands a `version: "2"`
+      # config; v6 installs golangci-lint v1.x and fails to parse .golangci.yml.
+      # The version is pinned rather than `latest` so CI and a developer's local
+      # `make lint` cannot disagree about what passes — a linter that is green
+      # locally and red in CI teaches people to ignore CI.
+      - uses: golangci/golangci-lint-action@v8
         with:
-          version: latest
+          version: v2.8.0
