@@ -5,6 +5,7 @@
 
 # @bind   cli.cmd_trestle     cmd/trestle/**
 # @bind   cli.report          internal/report/**
+# @bind   cli.render          internal/render/**
 # @bind   engine.check        internal/check/**
 # @bind   engine.run          internal/run/**
 # @bind   inputs.config       internal/config/**
@@ -38,6 +39,9 @@ cli: CLI {
   }
   report: report {
     tooltip: human + JSON, the runnable hints
+  }
+  render: render {
+    tooltip: D2 to SVG, embedded — no d2 binary on PATH
   }
 }
 
@@ -86,3 +90,6 @@ inputs.nodes -> ext_d2: d2compiler.Compile
 engine.run -> engine.check: listing + nodes + directives + config
 engine.check -> cli.report: violations
 cli.report -> author: exit code, hints
+cli.cmd_trestle -> cli.render: trestle render
+cli.render -> ext_d2: compile and lay out
+cli.render -> repo: writes SVG
