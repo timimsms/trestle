@@ -1,0 +1,36 @@
+# Trestle checks itself. This is the first configuration in existence that was
+# not written to make a fixture pass, and `make self-check` runs it in CI.
+version: 1
+
+diagrams:
+  - docs/architecture/*.d2
+
+# Every Go package under these roots needs an owning node. Depth 2, per the
+# Spike 01 verdict: it is the depth where a unit corresponds to a box you would
+# actually draw.
+discover:
+  - internal/*/
+  - cmd/*/
+
+# Real code, deliberately owned by no node. Enumerated, never blanket (L11).
+# internal/expected is test support with real source in it: it is not part of
+# the architecture, but it is not a test file either, so it is accountable here
+# rather than hidden behind `exclude`.
+shared:
+  - internal/expected/**
+
+exclude:
+  - "**/*_test.go"
+  # Fixture repos are deliberately malformed input, not architecture.
+  - "**/testdata/**"
+  # internal/integration is test-only — every file in it is a _test.go. It is
+  # excluded rather than shared because a `shared:` entry matching zero files
+  # is an ORPHAN, and it would be one the moment the line above takes effect.
+  - "internal/integration/**"
+
+severity:
+  UNBOUND: warn
+
+render:
+  out: docs/architecture/rendered/
+  layout: elk
