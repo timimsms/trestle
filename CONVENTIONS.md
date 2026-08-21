@@ -81,6 +81,28 @@ them into columns is fine and does not change how they parse.
    produce a green check that means nothing. Say the check fails and why — that is a
    better outcome than a passing check nobody can trust.
 
+## When a service changes shape
+
+Most guidance about diagrams covers adding, removing, renaming, splitting and merging. There is a
+sixth case that comes up just as often and is easier to get wrong:
+
+**A service can lose a responsibility without losing its box.**
+
+You fold one of its jobs into a caller, or move a chunk of logic elsewhere, and what is left is
+smaller but still real. The right edit is usually **not** to delete the node:
+
+- **Any code left behind still needs an owner.** If the directory is matched by a `discover:` rule
+  and you delete its node, you have traded a tidy diagram for an `UNMAPPED` violation on code that
+  somebody still maintains.
+- **Relabel the edges instead.** An arrow that said `builds quote` and now means `reads the rate
+  card` is the part that actually went stale. So are tooltips and labels describing what the box
+  does.
+- **Nothing will fail if you skip this.** `trestle check` cannot see edge labels or tooltips — the
+  node still exists and its binding still matches, so the check stays green while the diagram is
+  now wrong. See below.
+
+Delete the node only when the code is genuinely gone. Shrinking is not disappearing.
+
 ## What the check does not verify
 
 `trestle check` ties boxes to code. **It does not check what the diagram says about them**, and a
