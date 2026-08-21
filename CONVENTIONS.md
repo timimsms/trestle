@@ -201,6 +201,13 @@ questions, `"version": 1`, arrays that are `[]` and never null:
 - **An empty directory that a `discover:` rule matches always fails.** A unit is covered
   when at least one file under it is bound, so `mkdir app/services/inventory` with nothing
   in it fires `UNMAPPED`. Create the directory and its first file in the same change.
+- **A directive cannot be commented out.** The scanner strips the leading run of `#`
+  before it looks for `@`, so `## @bind svc_x app/x/**` is still a live binding, and so is
+  a directive you thought you had disabled by adding a marker. To turn a binding off,
+  **delete it** — or write `@ignore` with a real reason, which is the supported way to say
+  "not now" and keeps the suppression justifying itself. The same rule makes it safe to
+  *mention* a directive inside prose (`the binding is # @bind svc_x app/x/**`), because
+  only a line whose first non-`#` character is `@` is read as one.
 
 ## For humans
 
@@ -247,12 +254,23 @@ caught. Using `exclude:` to quiet a finding is how a blindspot becomes permanent
 ```bash
 trestle check      # what CI runs
 trestle explain    # what you run when check surprises you
+trestle render     # SVGs, via embedded D2 — no `d2` binary needed
+trestle init       # scaffold a repo. Run once, at the start
 ```
 
 CI runs `trestle check` on any PR touching `docs/architecture/` or paths named in
 `discover`. A failure means the diagram and the code disagree — fixing either one is
 valid, but they must be reconciled in that PR, not deferred.
 
-`trestle render --watch` and `trestle init` are described in the design docs but are **not
-built yet**. If you are reading this in a repo that adopted Trestle early, `check` and
-`explain` are the whole tool.
+Four commands, and there will not be a fifth.
+
+### If this repo was just scaffolded
+
+`trestle init` writes the starter diagram **empty**. That is deliberate: a diagram
+generated from the directory listing would pass its own check — Trestle having written
+both sides of the comparison — while saying nothing about how anything fits together.
+
+So the first `trestle check` reports one `UNMAPPED` per discovered directory. **That is an
+inventory, not a verdict.** Each finding carries the exact `@bind` line to paste, and
+working the list down is how the first diagram gets written: a box for each thing you
+would name in an architecture review, a `shared:` entry for each thing you would not.

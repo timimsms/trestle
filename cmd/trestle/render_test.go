@@ -57,7 +57,7 @@ func TestRenderWritesSVG(t *testing.T) {
 	root := renderRepo(t, okConfig, okDiagram)
 
 	var stdout, stderr bytes.Buffer
-	if code := Main([]string{"render"}, &stdout, &stderr); code != exitClean {
+	if code := Main([]string{"render"}, strings.NewReader(""), &stdout, &stderr); code != exitClean {
 		t.Fatalf("exit = %d, want %d (stderr: %s)", code, exitClean, stderr.String())
 	}
 
@@ -81,7 +81,7 @@ func TestRenderExitCodes(t *testing.T) {
 	t.Run("unparseable D2 is exit 2", func(t *testing.T) {
 		renderRepo(t, okConfig, "a -> {{{")
 		var stdout, stderr bytes.Buffer
-		if code := Main([]string{"render"}, &stdout, &stderr); code != exitTool {
+		if code := Main([]string{"render"}, strings.NewReader(""), &stdout, &stderr); code != exitTool {
 			t.Errorf("exit = %d, want %d", code, exitTool)
 		}
 	})
@@ -89,7 +89,7 @@ func TestRenderExitCodes(t *testing.T) {
 	t.Run("no render.out is exit 2 and says what to add", func(t *testing.T) {
 		renderRepo(t, "version: 1\ndiagrams:\n  - docs/architecture/*.d2\n", okDiagram)
 		var stdout, stderr bytes.Buffer
-		if code := Main([]string{"render"}, &stdout, &stderr); code != exitTool {
+		if code := Main([]string{"render"}, strings.NewReader(""), &stdout, &stderr); code != exitTool {
 			t.Errorf("exit = %d, want %d", code, exitTool)
 		}
 		if msg := stderr.String(); !strings.Contains(msg, "render.out") {
@@ -100,7 +100,7 @@ func TestRenderExitCodes(t *testing.T) {
 	t.Run("unknown layout is exit 2", func(t *testing.T) {
 		renderRepo(t, strings.Replace(okConfig, "layout: elk", "layout: graphviz", 1), okDiagram)
 		var stdout, stderr bytes.Buffer
-		if code := Main([]string{"render"}, &stdout, &stderr); code != exitTool {
+		if code := Main([]string{"render"}, strings.NewReader(""), &stdout, &stderr); code != exitTool {
 			t.Errorf("exit = %d, want %d", code, exitTool)
 		}
 	})
@@ -112,7 +112,7 @@ func TestRenderExitCodes(t *testing.T) {
 			t.Fatal(err)
 		}
 		var stdout, stderr bytes.Buffer
-		if code := Main([]string{"render"}, &stdout, &stderr); code != exitTool {
+		if code := Main([]string{"render"}, strings.NewReader(""), &stdout, &stderr); code != exitTool {
 			t.Errorf("exit = %d, want %d", code, exitTool)
 		}
 	})
@@ -122,7 +122,7 @@ func TestRenderQuiet(t *testing.T) {
 	renderRepo(t, okConfig, okDiagram)
 
 	var stdout, stderr bytes.Buffer
-	if code := Main([]string{"render", "--quiet"}, &stdout, &stderr); code != exitClean {
+	if code := Main([]string{"render", "--quiet"}, strings.NewReader(""), &stdout, &stderr); code != exitClean {
 		t.Fatalf("exit = %d (stderr: %s)", code, stderr.String())
 	}
 	if got := stdout.String(); got != "" {
@@ -137,7 +137,7 @@ func TestRenderSaysNothingAboutViolations(t *testing.T) {
 	renderRepo(t, okConfig, okDiagram)
 
 	var stdout, stderr bytes.Buffer
-	if code := Main([]string{"render"}, &stdout, &stderr); code != exitClean {
+	if code := Main([]string{"render"}, strings.NewReader(""), &stdout, &stderr); code != exitClean {
 		t.Fatalf("exit = %d, want %d", code, exitClean)
 	}
 	for _, word := range []string{"UNBOUND", "ORPHAN", "violation", "failures"} {

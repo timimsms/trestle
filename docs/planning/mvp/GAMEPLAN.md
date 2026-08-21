@@ -222,11 +222,54 @@ Recorded so they are decisions rather than accidents. Each is reversible; none a
   struct drags `io/fs` across the seam the I/O rule exists to defend.
   `integration.TestCheckEntryMirrorsWalkEntry` pins the shapes together so the copy cannot drift.
 
+### Smaller resolutions taken during Phase 7 (`init`)
+
+Recorded so they are decisions rather than accidents. Each is reversible; none adds a code or a
+command.
+
+- **The starter diagram is written empty.** The choice was between an empty canvas and one node
+  per discovered unit with its binding pre-written. Seeded would make the first `trestle check`
+  green; it was rejected because that green would be **manufactured** — Trestle comparing a
+  diagram it derived from the directory listing against the same listing. Every other decision
+  here treats a check that passes while inspecting nothing as the cardinal failure (`diagrams:`
+  matching zero files is a loud exit 2; a `discover:` rule matching zero directories is an
+  ORPHAN; codes set to `off` are printed on the summary line). A generated diagram also carries
+  no edges, which the README says are most of what a diagram communicates, and CONVENTIONS.md —
+  which `init` writes into the repo in the same breath — says "do not invent nodes to make a
+  diagram look complete". OVERVIEW defers generated diagrams to v2 by name.
+  **Accepted cost:** the first `trestle check` after `init` exits 1, one `UNMAPPED` per
+  discovered unit, and `trestle init && trestle check` cannot be a green pipeline on day one.
+  That cost is bounded, predicted out loud before anything is written, and every line of it
+  carries the `@bind` that fixes it — UNMAPPED's hint already emits the exact binding, at the
+  moment the reader is looking at that directory. Reverse this only if a real trial shows people
+  abandoning the first run rather than working it down.
+- **`init` proposes and does not impose, with an unanswerable prompt as a tool error.** Stdin
+  closed — a CI runner — exits 2 telling you to pass `--yes`. Treating "no answer" as a decline
+  would make `init` a command that reports success having written nothing.
+- **Re-running `init` is not an error; clobbering is.** Each artifact is handled independently:
+  missing ones are written, existing ones are kept and reported with the reason they were kept,
+  and `.trestle.yml` is never rewritten once it exists. A second run prints which detected shapes
+  the existing config does not cover, so it is worth running again after the repo grows.
+  Exit stays 0. The one refusal is a `.trestle.yml` in a *parent* directory: that would create a
+  nested second root, and every relative path in both configs would resolve against a directory
+  its author did not mean.
+- **CONVENTIONS.md is embedded from the repo root, which required a root Go package.** `go:embed`
+  cannot reach outside its own package directory, so the alternative was a second copy of the
+  contract under `internal/`. A four-line package at the root is the cheaper price than a
+  duplicated contract file in a repo whose entire subject is duplicated-fact drift.
+- **The starter diagram cannot show a commented-out directive**, because there is no such thing:
+  the scanner strips the leading run of `#` before looking for `@`, so `## @bind ...` is live.
+  Every example in the scaffolded file therefore keeps the directive off the start of its line,
+  and `internal/scaffold` has a test that parses the file and asserts zero directives. This is
+  the authoring gap Phase 2 flagged and left unresolved; CONVENTIONS.md now states it under
+  Traps, with `@ignore` named as the supported way to say "not now".
+
 ---
 
 ## 4. Architecture
 
 ```
+conventions.go          package `trestle`: go:embed of CONVENTIONS.md, nothing else.
 cmd/trestle/            main + cobra wiring. Thin. No logic.
 internal/
   config/               .trestle.yml load, validate, defaults, root discovery
@@ -235,6 +278,7 @@ internal/
   walk/                 the single filesystem walk. All I/O lives here.
   check/                THE PRODUCT. Pure. Zero I/O. Heavily tested.
   render/               D2 library wrapper (Phase 6)
+  scaffold/             `trestle init` — layout detection, the emitted files (Phase 7)
   report/               human + json formatting, golden-tested
   expected/             fixture EXPECTED parser, shared by Phases 3 and 4
   integration/          cross-seam guards — where two packages must agree

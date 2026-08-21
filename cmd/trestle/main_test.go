@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -29,7 +30,7 @@ var origWD string
 
 func TestMain(m *testing.M) {
 	if os.Getenv(subprocessEnv) == "1" {
-		os.Exit(Main(os.Args[1:], os.Stdout, os.Stderr))
+		os.Exit(Main(os.Args[1:], os.Stdin, os.Stdout, os.Stderr))
 	}
 	wd, err := os.Getwd()
 	if err != nil {
@@ -77,9 +78,17 @@ func fixtureNames(t *testing.T) []string {
 // CI log would receive.
 func runCLI(t *testing.T, dir string, args ...string) (stdout, stderr string, code int) {
 	t.Helper()
+	return runCLIStdin(t, dir, "", args...)
+}
+
+// runCLIStdin is runCLI with an answer waiting on stdin, for the one command
+// that asks a question. An empty string is a closed stdin, which is what a CI
+// runner looks like and is the case `init` must refuse rather than assume.
+func runCLIStdin(t *testing.T, dir, stdin string, args ...string) (stdout, stderr string, code int) {
+	t.Helper()
 	t.Chdir(dir)
 	var out, errOut bytes.Buffer
-	code = Main(args, &out, &errOut)
+	code = Main(args, strings.NewReader(stdin), &out, &errOut)
 	return out.String(), errOut.String(), code
 }
 

@@ -1,8 +1,10 @@
 # Contributing to Trestle
 
-**Status: pre-1.0, MVP complete.** `trestle check` works; `explain`, `render` and `init` are not
-built and are deliberately not started until the MVP has been pointed at real repos. If you want
-to help, [`docs/DOGFOODING.md`](docs/DOGFOODING.md) is worth more right now than a pull request.
+**Status: pre-1.0, all four commands built.** `check`, `explain`, `render` and `init` all work;
+the command surface is closed at four and the violation taxonomy at five. What is still missing is
+evidence: Trestle has run against fixtures, the worked example and its own repo, and not much
+else. If you want to help, [`docs/DOGFOODING.md`](docs/DOGFOODING.md) is worth more right now than
+a pull request — especially a report where nothing fired.
 
 ## Getting set up
 

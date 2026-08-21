@@ -23,9 +23,14 @@ const (
 // cobra's error path means "something went wrong" — exit 2 — and a repo with
 // failing violations is not that. A run that finds violations succeeds at its
 // job; it just reports 1.
-func Main(args []string, stdout, stderr io.Writer) int {
+//
+// stdin is here because `init` asks a question before it writes anything. It is
+// a parameter rather than os.Stdin so that the answer is injectable: a prompt
+// that can only be exercised by a human is a prompt that is tested by hand once
+// and then never again.
+func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	exit := exitClean
-	root := newRootCmd(stdout, stderr, &exit)
+	root := newRootCmd(stdin, stdout, stderr, &exit)
 	root.SetArgs(args)
 
 	if err := root.Execute(); err != nil {
@@ -37,7 +42,7 @@ func Main(args []string, stdout, stderr io.Writer) int {
 	return exit
 }
 
-func newRootCmd(stdout, stderr io.Writer, exit *int) *cobra.Command {
+func newRootCmd(stdin io.Reader, stdout, stderr io.Writer, exit *int) *cobra.Command {
 	root := &cobra.Command{
 		Use:   "trestle",
 		Short: "Bind architecture diagrams to the code they describe",
@@ -57,6 +62,7 @@ func newRootCmd(stdout, stderr io.Writer, exit *int) *cobra.Command {
 		Version: versionString(),
 	}
 	root.SetVersionTemplate("trestle {{.Version}}\n")
+	root.SetIn(stdin)
 	root.SetOut(stdout)
 	root.SetErr(stderr)
 	root.CompletionOptions.HiddenDefaultCmd = true
@@ -64,5 +70,6 @@ func newRootCmd(stdout, stderr io.Writer, exit *int) *cobra.Command {
 	root.AddCommand(newCheckCmd(stdout, exit))
 	root.AddCommand(newRenderCmd(stdout, exit))
 	root.AddCommand(newExplainCmd(stdout))
+	root.AddCommand(newInitCmd(stdout))
 	return root
 }
