@@ -4,13 +4,17 @@
 
 ```
 repo/
+├── .trestle.yml             # config: discovery rules, render output
 ├── docs/architecture/
 │   ├── system.d2            # diagrams, bindings embedded as comments
-│   ├── data-flow.d2
-│   └── .trestle.yml         # config: discovery rules, render output
+│   └── data-flow.d2
 ├── app/services/...         # the code being described
 └── AGENTS.md                # points at CONVENTIONS.md
 ```
+
+> **Corrected.** This tree originally placed `.trestle.yml` inside `docs/architecture/`, which
+> contradicts the sentence below it: the config's directory *is* the root, so a config living in
+> `docs/architecture/` would make `app/services/**` unresolvable. Config belongs at the repo root.
 
 Trestle discovers `.trestle.yml` by walking up from CWD. Everything is relative to the directory containing it (the "root").
 
@@ -169,12 +173,20 @@ docs/architecture/system.d2
             @bind app/services/billing/** matches 0 files
             hint: renamed? `git log --diff-filter=D -- app/services/billing`
 
+.trestle.yml
+
   UNMAPPED  app/services/notifications/
             no @bind glob covers this path
-            hint: add `# @bind svc_notifications app/services/notifications/**`
+            hint: add `# @bind svc_notifications app/services/notifications/**` to a diagram, or add `app/services/notifications/**` to `shared:`
 
 2 failures, 0 warnings
 ```
+
+> **Corrected after Phase 4.** This block originally grouped `UNMAPPED` under the diagram, which
+> the tool cannot reproduce: `UNMAPPED` and the `shared:`/`discover:` `ORPHAN`s are sourced from
+> `.trestle.yml`, not from any `.d2`. The implementation was right and the spec was aspirational —
+> an unsatisfied `discover:` rule is a fact about the config, and no single diagram is more
+> responsible for it than another. Grouping is by the file that declared the thing that broke.
 
 Every violation carries a hint containing a runnable next step. A failing check that does not tell you what to type is a check people learn to route around.
 
