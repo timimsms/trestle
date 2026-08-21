@@ -1,7 +1,8 @@
 # Phase 7 — `trestle init` (post-MVP)
 
 **Blocks on:** Phase 4 stop gate; benefits from Phase 5
-**Status:** not authorized. Re-scope after the MVP.
+**Status:** built. Acceptance below is checked off against the implementation; the decisions
+taken along the way are recorded in GAMEPLAN §3, "Smaller resolutions taken during Phase 7".
 
 ---
 
@@ -61,12 +62,27 @@ the range, but only just. Before `init` ships, probe a second repo and count. If
 50+ entries, enumeration is unusable and L11 needs revisiting — though 50 shared subsystems is
 itself a finding about the codebase, not just about Trestle.
 
-## Acceptance (draft)
+## Acceptance
 
-- [ ] `trestle init` in a fresh repo writes `.trestle.yml`, `CONVENTIONS.md`, and an `AGENTS.md`
+- [x] `trestle init` in a fresh repo writes `.trestle.yml`, `CONVENTIONS.md`, and an `AGENTS.md`
       stanza (appending, never clobbering an existing `AGENTS.md`)
-- [ ] `discover:` seeded at depth 2 from detected layout, shown to the user before writing
-- [ ] `shared:` written empty with the L11 enumeration warning inline
-- [ ] `CONVENTIONS.md` is `go:embed`-ed from the root copy — one source of truth
-- [ ] Running `init` twice does not clobber a customized `.trestle.yml`; it diffs or refuses
-- [ ] `trestle check` immediately after `init` runs and exits without a tool error
+- [x] `discover:` seeded at depth 2 from detected layout, shown to the user before writing
+- [x] `shared:` written empty with the L11 enumeration warning inline
+- [x] `CONVENTIONS.md` is `go:embed`-ed from the root copy — one source of truth
+- [x] Running `init` twice does not clobber a customized `.trestle.yml`; it diffs or refuses
+- [x] `trestle check` immediately after `init` runs and exits without a tool error
+
+One acceptance item needed a decision the draft did not anticipate. `diagrams:` is required and a
+config whose glob matches nothing exits 2, so the last item forced `init` to scaffold a diagram as
+well — and then to decide what goes in it. It is written **empty**, and the argument is in
+GAMEPLAN §3. The consequence for this list: "exits without a tool error" means exit **1**, one
+`UNMAPPED` per discovered unit, which is the inventory this file's `shared:` section describes as
+the honest first run.
+
+## O7 was not answered here
+
+The section above still stands: L11 assumes 5–20 shared subsystems and that remains unmeasured on
+a second real repo. `init` does not settle it, and was built without settling it, because it
+writes `shared:` empty either way. What `init` changes is who is positioned to answer: the first
+`trestle check` after it now produces exactly the UNMAPPED list whose triage would produce that
+count. Record it during the next dogfooding trial.

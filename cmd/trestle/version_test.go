@@ -12,7 +12,7 @@ import (
 func TestVersionFlag(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 
-	if code := Main([]string{"--version"}, &stdout, &stderr); code != exitClean {
+	if code := Main([]string{"--version"}, strings.NewReader(""), &stdout, &stderr); code != exitClean {
 		t.Errorf("exit = %d, want %d (stderr: %s)", code, exitClean, stderr.String())
 	}
 
@@ -32,7 +32,7 @@ func TestVersionFlag(t *testing.T) {
 func TestVersionIsAFlagNotACommand(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 
-	if code := Main([]string{"version"}, &stdout, &stderr); code != exitTool {
+	if code := Main([]string{"version"}, strings.NewReader(""), &stdout, &stderr); code != exitTool {
 		t.Errorf("`trestle version` exit = %d, want %d — it should not be a subcommand",
 			code, exitTool)
 	}

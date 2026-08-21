@@ -40,17 +40,25 @@ try `--days 365` or a different repo. What you want is a repo where directories 
 
 ```console
 cd ~/code/target
-trestle init          # not built yet — see "Until init exists" below
+trestle init          # proposes `discover:` rules; nothing is written until you agree
 trestle check
 ```
 
 Expect the first run to be noisy. That is the point of the first run: it is an inventory, not a
 verdict.
 
-### Until `init` exists
+`init` scaffolds the starter diagram **empty**, so that first `check` reports one `UNMAPPED` per
+discovered directory and exits 1. Do not read that as a failed setup — it is the list of things
+the repo has that nobody has drawn yet, and each line carries the `@bind` that fixes it. **Write
+the count down before you fix anything**; it is the denominator for everything below.
 
-Phase 7 is not built. Write `.trestle.yml` by hand at the repo root — the root is the directory
-containing that file, and every path is relative to it:
+The proposal `init` prints is the moment to narrow the rules. Deleting a rule at the prompt
+because you can see it matched `src/.cache` is triage. Deleting it a week later because the check
+is noisy is the failure mode this trial is measuring.
+
+### Writing the config by hand
+
+`init` is the fast path, not the only one. The shape it produces, minus the comments:
 
 ```yaml
 version: 1

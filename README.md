@@ -13,11 +13,9 @@ version-controlled and completely wrong.
 Trestle adds the missing edge: a declared, checkable binding between a node in the diagram and a
 path in the codebase.
 
-> **Status: MVP complete, at the stop gate.** `trestle check` works, in both formats, against
-> all ten fixture repos, the worked example, and **this repo** — `make self-check` runs in CI.
-> `trestle explain` ships too: eleven dogfooding trials asked for a way to see what the tool had
-> parsed, and inferring the node set from the violations it failed to produce is backwards.
-> `render` and `init` are not built. See
+> **Status: all four commands ship.** `trestle check` works, in both formats, against all ten
+> fixture repos, the worked example, and **this repo** — `make self-check` runs in CI.
+> `explain`, `render` and `init` are built on top of the same loaded context. See
 > [`docs/planning/mvp/GAMEPLAN.md`](docs/planning/mvp/GAMEPLAN.md).
 >
 > The first non-fixture run found a node that did not exist in the source: a `;` inside a D2
@@ -113,7 +111,7 @@ Treat `trestle check` as a floor, not a proof.
 trestle check [--format=human|json] [--strict]   validate bindings — the product
 trestle render [--watch]                         render via embedded D2
 trestle explain [node_id] [--overlaps]           show what Trestle parsed
-trestle init                                     scaffold config + conventions (not built)
+trestle init [--yes] [--dry-run]                 scaffold config + conventions
 ```
 
 Four. Resist adding a fifth.
@@ -128,6 +126,19 @@ behind it, and how many files that glob matches right now — the answer to "doe
 I think it sees". With a node ID it shows that node's bindings, the files each one claims, and its
 violations. `--overlaps` lists paths claimed by more than one node, which is legal and never a
 failure. `--format=json` is the shape an agent should read before editing a diagram.
+
+`init` sets a repo up: it seeds `discover:` rules from the layout it recognizes, writes
+`CONVENTIONS.md` — embedded in the binary, so there is one copy of the contract — appends a
+stanza to `AGENTS.md`, and scaffolds a starter diagram. It proposes rather than imposes: the
+rules and the directories each one matches are printed first, and nothing is written until you
+agree (`--yes` for scripts, `--dry-run` to look). Nothing existing is overwritten, ever.
+
+**The starter diagram is empty, and the first `trestle check` fails.** That is the design. A
+diagram generated from your directory listing would pass its own check — Trestle having written
+both sides of the comparison — while telling you nothing, and edges cannot be guessed at all.
+So the first run reports one `UNMAPPED` per discovered directory, each carrying the `@bind` line
+that fixes it. It is an inventory, not a verdict, and working it down is how the first diagram
+gets written.
 
 ## What Trestle is not
 
