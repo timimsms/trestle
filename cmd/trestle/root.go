@@ -62,6 +62,7 @@ func newRootCmd(stdout, stderr io.Writer, exit *int) *cobra.Command {
 	root.CompletionOptions.HiddenDefaultCmd = true
 
 	root.AddCommand(newCheckCmd(stdout, exit))
+	root.AddCommand(newRenderCmd(stdout, exit))
 	root.AddCommand(newExplainCmd(stdout))
 	return root
 }

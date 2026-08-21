@@ -118,12 +118,16 @@ trestle init                                     scaffold config + conventions (
 
 Four. Resist adding a fifth.
 
+`render` writes an SVG per diagram to `render.out`, using the layout engine and theme from
+`.trestle.yml`. **No `d2` binary is required** — D2 is embedded, so the renderer and the parser
+cannot disagree about a version. `--watch` re-renders on save, debounced, and keeps going through
+the syntax errors that exist between one keystroke and the next.
+
 `explain` with no argument lists every node in every diagram with its binding status, the glob
 behind it, and how many files that glob matches right now — the answer to "does the tool see what
 I think it sees". With a node ID it shows that node's bindings, the files each one claims, and its
 violations. `--overlaps` lists paths claimed by more than one node, which is legal and never a
-failure. It exits 0 whatever it finds: it reports, it does not judge. `--format=json` is the shape
-an agent should read before editing a diagram.
+failure. `--format=json` is the shape an agent should read before editing a diagram.
 
 ## What Trestle is not
 
