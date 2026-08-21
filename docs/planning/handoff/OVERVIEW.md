@@ -123,6 +123,43 @@ The probe surfaced **two spec gaps that Task 2 must resolve before the check eng
   device, not an unowned subsystem. Resolved in GAMEPLAN as: **a container whose descendants are
   all accounted for is itself accounted for.** No new violation code; L-taxonomy stays at five.
 
+### Amendment — first dogfood result
+
+**Date:** 2026-08-20 · **Target:** Trestle itself, first non-fixture config in existence
+
+Trestle was pointed at its own repo the moment `check` worked. The first run produced four
+findings from a config written to describe the repo honestly rather than to pass:
+
+| Finding | Verdict |
+| --- | --- |
+| `UNMAPPED internal/render/` | **True positive.** An empty package directory left over from the Phase 0 scaffold. Git does not track empty directories, so it was invisible to every other tool in the repo. Deleted. |
+| `UNBOUND author`, `UNBOUND repo` | **Correct, prompt-shaped.** Two diagram nodes that are genuinely not code. A modeling gap, not an error — exactly what O3 predicted when it resolved `UNBOUND` to *warn*. Fixed with `@external`. |
+| `UNBOUND engine.run.the only place that orchestrates I/O` | **The interesting one — see below.** |
+
+That third node does not exist in the source. It exists because a tooltip read
+`tooltip: the pipeline; the only place that orchestrates I/O`, and **`;` is a statement
+separator in D2**. The compiler split the line and turned the trailing prose into a child node.
+The diagram rendered without complaint; the phantom node was invisible to review; the only reason
+anyone found out is that Trestle asked what code backed it.
+
+**This is the success criterion firing, on the first non-fixture run.** OVERVIEW asks for a
+failure "for a reason that was not anticipated when the bindings were written," and nobody
+writing those bindings anticipated D2 statement-separator semantics inside a tooltip. The tool
+found a real defect in a real diagram that a human reviewer would not have caught, and it did so
+by asking a question — *what code is this?* — that no linter or renderer asks.
+
+Two caveats, so this is not over-read:
+
+1. **Sample size one, and the repo is the tool's own.** One catch is not a track record. The
+   Gate A caveat stands and the criterion says *"on a real PR, in the first month"* — Trestle
+   still needs to run somewhere it was not designed alongside.
+2. **The catch was UNBOUND, a warning.** Under default severity this finding does not fail a
+   build. `make self-check` runs `--strict` for exactly this reason.
+
+`.trestle.yml` and `docs/architecture/system.d2` now live in this repo and `make self-check` runs
+in CI as a required job. If Trestle will not hold itself to the standard it recommends, it has no
+business recommending it.
+
 ### Deferred (named, so they don't get re-litigated)
 
 - **Structurizr-style model/view separation.** Real value, wrong time. Pays off only once there are enough views to contradict each other. v2.

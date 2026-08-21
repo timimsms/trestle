@@ -38,6 +38,13 @@ check: build
 check-strict: build
 	cd examples/repairs-platform && ../../$(BINARY) check --strict
 
+# Trestle checks Trestle. This is the only invocation in the repo whose config
+# was not written to make something pass, so it is the one that can still
+# surprise us. It runs --strict: this repo holds itself to the standard it
+# recommends, and a warning here is a modeling gap worth fixing now.
+self-check: build
+	./$(BINARY) check --strict
+
 # Re-run the Spike 01 probe. Read-only; safe against any repo.
 # usage: make spike REPO=~/code/foo DEPTH=2
 REPO  ?= .
