@@ -83,6 +83,29 @@ them into columns is fine and does not change how they parse.
    produce a green check that means nothing. Say the check fails and why — that is a
    better outcome than a passing check nobody can trust.
 
+## Starting from nothing
+
+`trestle init` writes an empty diagram on purpose. A diagram generated from your directory
+listing cannot disagree with that listing — it would pass its own check on day one while
+telling nobody anything, which is the failure this tool exists to prevent, shipped as a
+feature.
+
+So the first diagram is authored. The fastest honest route:
+
+1. **`trestle check --format=json`** — every `UNMAPPED` is a directory needing an owner, and
+   each carries the exact `@bind` line that claims it. That list is the raw material.
+2. **Group units into boxes.** One box per thing you would name out loud in an architecture
+   review. Two directories that are one subsystem get one node with two `@bind` lines —
+   bindings are repeatable and OR together. Plumbing nobody would name goes in `shared:`.
+3. **Decide the edges yourself.** An import graph tells you what calls what, not what the
+   architecture means, and `trestle check` cannot verify a single edge. **A missing edge is
+   a gap; a confident wrong edge is a lie nothing downstream will contradict.**
+4. **Render it and look at it.** Unreadable usually means too many boxes, not bad layout.
+
+If you are handing this to an agent: give it the JSON, and answer its questions about edges
+rather than letting it guess. Steps 1, 2 and 4 are mechanical. Step 3 is the one that needs
+somebody who knows why the system is shaped the way it is.
+
 ## When a service changes shape
 
 Most guidance about diagrams covers adding, removing, renaming, splitting and merging. There is a

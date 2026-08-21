@@ -244,4 +244,31 @@ binding points at code that is gone, or when code appears that no box owns.
    green by deleting a ` + "`discover:`" + ` rule, widening a glob until the complaint
    disappears, or adding ` + "`@ignore`" + ` with a hollow reason — a green check nobody can
    trust is worse than a failing one.
+
+### Writing the first diagram
+
+If ` + "`docs/architecture/system.d2`" + ` is still empty, this is the job. Trestle deliberately
+does not generate it: a diagram derived from the directory listing cannot disagree with
+that listing, so it would pass its own check while telling nobody anything.
+
+1. **Get the inventory.** ` + "`trestle check --format=json`" + ` — every ` + "`UNMAPPED`" + ` is a
+   directory that needs an owner, and each one already carries the exact ` + "`@bind`" + `
+   line that would claim it.
+2. **Group units into boxes.** One box per thing a person would name out loud in an
+   architecture review. Two directories that are one subsystem get one node with two
+   ` + "`@bind`" + ` lines — bindings are repeatable and OR together. Plumbing that nobody
+   would name goes in ` + "`shared:`" + `, not on the canvas.
+3. **Ask about the edges. Do not infer them.** This is the step that matters most and
+   the one you are most likely to get wrong. Import graphs tell you what calls what,
+   not what the architecture *means* — and ` + "`trestle check`" + ` cannot verify a single
+   edge, so nothing downstream will catch a wrong one. **A missing edge is a gap; a
+   confident wrong edge is a lie the tool will never contradict.** Ask the human which
+   boxes talk to which, and what each arrow carries.
+4. **Bind every node as you add it**, and give infrastructure ` + "`@infra`" + ` and
+   third-party systems ` + "`@external`" + ` rather than leaving them bare.
+5. **Run ` + "`trestle check`" + ` until it is clean**, then ` + "`trestle render`" + ` and look at
+   the result. If it is unreadable it usually has too many boxes, not bad layout.
+
+Stop at one diagram that answers one question. A diagram answering three answers
+none of them well.
 `
