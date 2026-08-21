@@ -13,10 +13,17 @@ version-controlled and completely wrong.
 Trestle adds the missing edge: a declared, checkable binding between a node in the diagram and a
 path in the codebase.
 
-> **Status: MVP complete, at the stop gate.** Phases 1–4 have landed: `trestle check` works,
-> in both formats, against all ten fixture repos and the worked example. `explain`, `render`
-> and `init` are not built and are deliberately not started until the MVP has been pointed at
-> a real repo. See [`docs/planning/mvp/GAMEPLAN.md`](docs/planning/mvp/GAMEPLAN.md).
+> **Status: MVP complete, at the stop gate.** `trestle check` works, in both formats, against
+> all ten fixture repos, the worked example, and **this repo** — `make self-check` runs in CI.
+> `explain`, `render` and `init` are not built and are deliberately not started until the MVP
+> has been pointed at more real repos. See
+> [`docs/planning/mvp/GAMEPLAN.md`](docs/planning/mvp/GAMEPLAN.md).
+>
+> The first non-fixture run found a node that did not exist in the source: a `;` inside a D2
+> tooltip is a statement separator, so the compiler had silently turned trailing prose into a
+> child node. It rendered fine and no reviewer would have caught it. That is the
+> [success criterion](#success-criterion) firing — once, on the tool's own repo, which is not
+> yet a track record.
 
 ---
 
@@ -96,6 +103,8 @@ or a history layer. These are deliberate exclusions, not backlog items — see
 | File | Contains |
 | --- | --- |
 | [`CONVENTIONS.md`](CONVENTIONS.md) | The agent contract. Ships with the product. |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Setup, the constraints and why they hold, where help is useful |
+| [`docs/DOGFOODING.md`](docs/DOGFOODING.md) | How to run the trial that decides whether this ships |
 | [`docs/planning/mvp/GAMEPLAN.md`](docs/planning/mvp/GAMEPLAN.md) | Build plan, gate verdicts, architecture |
 | [`docs/planning/mvp/phases/`](docs/planning/mvp/phases/) | Per-phase tasks and acceptance criteria |
 | [`docs/planning/handoff/OVERVIEW.md`](docs/planning/handoff/OVERVIEW.md) | Scope, non-goals, decision ledger L1–L12 |
@@ -106,15 +115,21 @@ or a history layer. These are deliberate exclusions, not backlog items — see
 ## Development
 
 ```console
-make            # fmt, vet, test, build
-make test-core  # internal/check alone — it must stay I/O-free
-make bench      # the 200ms/100k-file target
+make             # fmt, vet, test, build
+make self-check  # Trestle checks Trestle, --strict
+make test-core   # internal/check alone — it must stay I/O-free
+make bench       # the 200ms/100k-file target
 make spike REPO=~/code/foo DEPTH=2   # re-run the Spike 01 drift probe (read-only)
 ```
+
+Go 1.25+, and nothing else — D2 is embedded as a library, so there is no `d2` binary to install.
 
 ## Success criterion
 
 > `trestle check` fails on a real PR, at least once in the first month, for a reason that was not
 > anticipated when the bindings were written.
 
-If it never fires, it is decoration and should be deleted. This is deliberately falsifiable.
+If it never fires, it is decoration and should be deleted. This is deliberately falsifiable, and
+it is the MVP's evaluation gate rather than a slogan — which is why
+[`docs/DOGFOODING.md`](docs/DOGFOODING.md) exists and why a dogfood report where nothing fired is
+still worth filing.
