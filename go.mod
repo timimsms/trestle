@@ -4,6 +4,7 @@ go 1.25.6
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.10.0
+	github.com/fsnotify/fsnotify v1.7.1-0.20240403050945-7086bea086b7
 	github.com/goccy/go-yaml v1.19.2
 	github.com/spf13/cobra v1.10.2
 	oss.terrastruct.com/d2 v0.7.2
@@ -11,6 +12,7 @@ require (
 
 require (
 	github.com/PuerkitoBio/goquery v1.10.0 // indirect
+	github.com/alecthomas/chroma/v2 v2.14.0 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/dlclark/regexp2 v1.11.4 // indirect
@@ -27,6 +29,7 @@ require (
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/image v0.20.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	oss.terrastruct.com/util-go v0.0.0-20250213174338-243d8661088a // indirect

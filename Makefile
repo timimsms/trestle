@@ -1,7 +1,7 @@
 BINARY := trestle
 PKG    := github.com/timimsms/trestle
 
-.PHONY: all build test test-core lint fmt vet check check-strict bench clean fixtures spike
+.PHONY: all build test test-core lint fmt vet check check-strict self-check render bench clean fixtures spike
 
 all: fmt vet test build
 
@@ -44,6 +44,11 @@ check-strict: build
 # recommends, and a warning here is a modeling gap worth fixing now.
 self-check: build
 	./$(BINARY) check --strict
+
+# Re-render this repo's own diagram. Output is gitignored — it is a generated
+# artifact, and CONVENTIONS tells authors to edit the .d2 instead.
+render: build
+	./$(BINARY) render
 
 # Re-run the Spike 01 probe. Read-only; safe against any repo.
 # usage: make spike REPO=~/code/foo DEPTH=2

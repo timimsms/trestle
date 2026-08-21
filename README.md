@@ -111,11 +111,16 @@ Treat `trestle check` as a floor, not a proof.
 ```
 trestle check [--format=human|json] [--strict]   validate bindings — the product
 trestle render [--watch]                         render via embedded D2
-trestle explain <node_id> [--overlaps]           debug a node's bindings
-trestle init                                     scaffold config + conventions
+trestle explain <node_id> [--overlaps]           debug a node's bindings   (not built)
+trestle init                                     scaffold config + conventions (not built)
 ```
 
 Four. Resist adding a fifth.
+
+`render` writes an SVG per diagram to `render.out`, using the layout engine and theme from
+`.trestle.yml`. **No `d2` binary is required** — D2 is embedded, so the renderer and the parser
+cannot disagree about a version. `--watch` re-renders on save, debounced, and keeps going through
+the syntax errors that exist between one keystroke and the next.
 
 ## What Trestle is not
 
