@@ -15,8 +15,9 @@ path in the codebase.
 
 > **Status: MVP complete, at the stop gate.** `trestle check` works, in both formats, against
 > all ten fixture repos, the worked example, and **this repo** — `make self-check` runs in CI.
-> `explain`, `render` and `init` are not built and are deliberately not started until the MVP
-> has been pointed at more real repos. See
+> `trestle explain` ships too: eleven dogfooding trials asked for a way to see what the tool had
+> parsed, and inferring the node set from the violations it failed to produce is backwards.
+> `render` and `init` are not built. See
 > [`docs/planning/mvp/GAMEPLAN.md`](docs/planning/mvp/GAMEPLAN.md).
 >
 > The first non-fixture run found a node that did not exist in the source: a `;` inside a D2
@@ -111,7 +112,7 @@ Treat `trestle check` as a floor, not a proof.
 ```
 trestle check [--format=human|json] [--strict]   validate bindings — the product
 trestle render [--watch]                         render via embedded D2
-trestle explain <node_id> [--overlaps]           debug a node's bindings   (not built)
+trestle explain [node_id] [--overlaps]           show what Trestle parsed
 trestle init                                     scaffold config + conventions (not built)
 ```
 
@@ -121,6 +122,12 @@ Four. Resist adding a fifth.
 `.trestle.yml`. **No `d2` binary is required** — D2 is embedded, so the renderer and the parser
 cannot disagree about a version. `--watch` re-renders on save, debounced, and keeps going through
 the syntax errors that exist between one keystroke and the next.
+
+`explain` with no argument lists every node in every diagram with its binding status, the glob
+behind it, and how many files that glob matches right now — the answer to "does the tool see what
+I think it sees". With a node ID it shows that node's bindings, the files each one claims, and its
+violations. `--overlaps` lists paths claimed by more than one node, which is legal and never a
+failure. `--format=json` is the shape an agent should read before editing a diagram.
 
 ## What Trestle is not
 

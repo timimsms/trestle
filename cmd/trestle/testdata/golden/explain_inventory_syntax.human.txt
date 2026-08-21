@@ -1,0 +1,18 @@
+docs/architecture/system.d2
+
+  bound     svc_billing         app/services/billing/** — 1 file
+  bound     svc_search          app/services/search/** — 2 files  SYNTAX
+  bound     svc_legacy_tickets  app/services/legacy_tickets/** — 1 file  SYNTAX
+
+unresolved directives
+
+  malformed (line did not parse)
+            `# @bind   svc_search` (docs/architecture/system.d2:9)
+            @bind requires a glob
+
+  malformed (line did not parse)
+            `# @ignore svc_legacy_tickets` (docs/architecture/system.d2:11)
+            @ignore requires a quoted reason; an unexplained suppression is how a check dies quietly
+
+3 nodes: 3 bound
+2 failures, 0 warnings — `trestle check`
