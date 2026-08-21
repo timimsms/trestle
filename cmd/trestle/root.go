@@ -50,7 +50,13 @@ func newRootCmd(stdout, stderr io.Writer, exit *int) *cobra.Command {
 		// argument mistake still gets the usage text, because that is the one
 		// class of error the usage text actually answers.
 		SilenceUsage: false,
+		// Cobra turns this into a --version *flag*, not a subcommand. That
+		// distinction is the whole reason to use it: the ledger caps the
+		// command surface at four, and `trestle version` would have been a
+		// fifth for no benefit.
+		Version: versionString(),
 	}
+	root.SetVersionTemplate("trestle {{.Version}}\n")
 	root.SetOut(stdout)
 	root.SetErr(stderr)
 	root.CompletionOptions.HiddenDefaultCmd = true
