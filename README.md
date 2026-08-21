@@ -81,6 +81,31 @@ diagram is wrong" from "Trestle is broken."
 
 Five is the number people will actually learn. New failure modes fold into existing codes.
 
+## What a green check does *not* mean
+
+Trestle ties **boxes to code**. It does not verify what the diagram says about those boxes, and
+knowing the difference is the difference between trusting the exit code correctly and over-trusting
+it.
+
+| A green `trestle check` guarantees | It does not guarantee |
+| --- | --- |
+| Every node has code behind it | That the code does what the node claims |
+| Code under a `discover:` rule has an owning node | That new architecture *inside* an already-bound directory is on the diagram |
+| No binding points at a path that no longer exists | That a service still *is* a service — gut it but leave one file and the glob still matches |
+| — | **That any edge on the diagram is true** |
+
+That last row is the one that surprises people. Bindings are node→path, so the arrows — who calls
+whom, which is most of what a system diagram communicates — are unverified prose. You can draw an
+edge that never existed, or delete one that does, and the check stays green.
+
+This is a deliberate boundary, not a gap to be filled. Verifying edges means call-graph analysis,
+which is a different tool. What Trestle prevents is a narrower and still-common class of lie: a box
+with nothing behind it, and code with no box. **A rename is the most frequent way a diagram goes
+stale, and on that case the check is genuinely good** — it fails with the exact binding line to
+paste.
+
+Treat `trestle check` as a floor, not a proof.
+
 ## Commands
 
 ```
