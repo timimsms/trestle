@@ -81,6 +81,48 @@ them into columns is fine and does not change how they parse.
    produce a green check that means nothing. Say the check fails and why — that is a
    better outcome than a passing check nobody can trust.
 
+## When a service changes shape
+
+Most guidance about diagrams covers adding, removing, renaming, splitting and merging. There is a
+sixth case that comes up just as often and is easier to get wrong:
+
+**A service can lose a responsibility without losing its box.**
+
+You fold one of its jobs into a caller, or move a chunk of logic elsewhere, and what is left is
+smaller but still real. The right edit is usually **not** to delete the node:
+
+- **Any code left behind still needs an owner.** If the directory is matched by a `discover:` rule
+  and you delete its node, you have traded a tidy diagram for an `UNMAPPED` violation on code that
+  somebody still maintains.
+- **Relabel the edges instead.** An arrow that said `builds quote` and now means `reads the rate
+  card` is the part that actually went stale. So are tooltips and labels describing what the box
+  does.
+- **Nothing will fail if you skip this.** `trestle check` cannot see edge labels or tooltips — the
+  node still exists and its binding still matches, so the check stays green while the diagram is
+  now wrong. See below.
+
+Delete the node only when the code is genuinely gone. Shrinking is not disappearing.
+
+## What the check does not verify
+
+`trestle check` ties boxes to code. **It does not check what the diagram says about them**, and a
+green run is not evidence the diagram is true.
+
+- **Edges are unverified.** Bindings are node→path, so the arrows are prose. An edge that never
+  existed, or a deleted edge that still does, both pass.
+- **Anything inside an already-bound directory is invisible.** Add a third-party integration to a
+  service that already has a `@bind` and nothing fires — the directory still has an owner.
+- **A gutted service still passes.** Move a service's logic elsewhere but leave one file behind and
+  the glob keeps matching.
+
+So: **the check is a floor, not a proof.** It reliably catches a box with nothing behind it and
+code with no box — which is what a rename or a deletion produces, and those are the most common way
+a diagram goes stale. It cannot tell you the diagram is *right*.
+
+If you are an agent: a green check does not license "the diagram still matches." If you moved
+responsibilities between services, say so and update the edges, even though nothing will fail if
+you do not.
+
 ## Traps
 
 - **A `;` is a statement separator in D2.** `tooltip: the pipeline; the fast one` is two
