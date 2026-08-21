@@ -124,6 +124,10 @@ make spike REPO=~/code/foo DEPTH=2   # re-run the Spike 01 drift probe (read-onl
 
 Go 1.25+, and nothing else — D2 is embedded as a library, so there is no `d2` binary to install.
 
+## License
+
+[MIT](LICENSE).
+
 ## Success criterion
 
 > `trestle check` fails on a real PR, at least once in the first month, for a reason that was not

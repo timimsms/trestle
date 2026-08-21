@@ -98,3 +98,8 @@ OVERVIEW — not a gap waiting to be filled.
   are enough views to contradict each other.
 - The preview pane, unless O5 resolves in its favor. A preview showing what `d2 --watch` already
   shows is not worth a line of code.
+
+## License
+
+Trestle is [MIT licensed](LICENSE). Contributions are accepted under the same terms — there is no
+CLA and no copyright assignment.
