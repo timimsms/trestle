@@ -1,0 +1,5 @@
+exit: 1
+violations:
+  UNMAPPED  app/services/notifications/
+warnings: 0
+strict_exit: 1

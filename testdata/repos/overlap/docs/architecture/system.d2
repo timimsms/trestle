@@ -1,0 +1,19 @@
+# overlap: two nodes claim app/services/billing/payment_processor.rb. Legal (L12), exit 0.
+
+# The invoice generator and the payment processor honestly live in the same
+# directory and are honestly two boxes. Overlap gets no violation code — it
+# surfaces through `trestle explain --overlaps`.
+
+# @bind     svc_invoicing  app/services/billing/**
+# @bind     svc_payments   app/services/billing/payment_processor.rb
+# @external ext_stripe
+
+svc_invoicing: Invoicing
+svc_payments: Payments
+
+ext_stripe: Stripe {
+  style.stroke-dash: 2
+}
+
+svc_invoicing -> svc_payments: requests capture
+svc_payments -> ext_stripe: charges card

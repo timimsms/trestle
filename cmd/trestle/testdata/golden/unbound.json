@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "strict": false,
+  "summary": {
+    "failures": 0,
+    "warnings": 1
+  },
+  "disabled": [],
+  "violations": [
+    {
+      "code": "UNBOUND",
+      "severity": "warn",
+      "node": "queue_dispatch",
+      "path": null,
+      "source": {
+        "file": "docs/architecture/system.d2",
+        "line": 12
+      },
+      "detail": "no @bind, @external, @infra or @ignore",
+      "hint": "add one of `# @bind queue_dispatch <glob>`, `# @infra queue_dispatch`, `# @external queue_dispatch`, or `# @ignore queue_dispatch \"<reason>\"` — for a database or queue the answer is usually `@infra`"
+    }
+  ]
+}

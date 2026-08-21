@@ -1,0 +1,5 @@
+exit: 1
+violations:
+  DANGLING  svc_invoicing  app/legacy/invoicing/**
+warnings: 0
+strict_exit: 1

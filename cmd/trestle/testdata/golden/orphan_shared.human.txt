@@ -1,0 +1,7 @@
+.trestle.yml
+
+  ORPHAN    lib/legacy_pdf/**
+            shared: lib/legacy_pdf/** matches 0 files
+            hint: renamed? `git log --diff-filter=D -- lib/legacy_pdf` — otherwise drop `lib/legacy_pdf/**` from `shared:` in `.trestle.yml`
+
+1 failure, 0 warnings

@@ -1,0 +1,17 @@
+# ambiguous: unqualified `svc_search` matches two nodes (O8). Expect 1 SYNTAX, exit 1.
+
+# @bind billing.svc_search  app/services/billing_search/**
+# @bind support.svc_search  app/services/support_search/**
+# Unqualified. Suffix-matches both nodes above, so it must not be silently
+# resolved to either one.
+# @bind svc_search          app/search/legacy/**
+
+billing: Billing Domain {
+  svc_search: Invoice Search
+}
+
+support: Support Domain {
+  svc_search: Ticket Search
+}
+
+billing.svc_search -> support.svc_search: cross-links tickets

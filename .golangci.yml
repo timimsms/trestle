@@ -1,0 +1,28 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+    - revive
+
+  settings:
+    revive:
+      rules:
+        - name: exported
+        - name: error-strings
+        - name: context-as-argument
+
+  exclusions:
+    rules:
+      # Fixture repos are deliberately malformed input, not code to lint.
+      - path: testdata/
+        linters: [errcheck, staticcheck, revive, unused]
+
+formatters:
+  enable:
+    - gofmt

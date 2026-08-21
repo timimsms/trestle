@@ -1,0 +1,20 @@
+# Build output
+/trestle
+/dist/
+/bin/
+
+# Go
+*.test
+*.out
+coverage.txt
+
+# Rendered diagram artifacts — generated, never edited by hand.
+# See CONVENTIONS.md: edit the .d2, not the SVG.
+docs/architecture/rendered/
+
+# macOS
+.DS_Store
+
+# Editors
+.idea/
+*.swp

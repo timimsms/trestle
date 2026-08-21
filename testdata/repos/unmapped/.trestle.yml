@@ -1,0 +1,7 @@
+version: 1
+
+diagrams:
+  - docs/architecture/*.d2
+
+discover:
+  - app/services/*/

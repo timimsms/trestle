@@ -1,0 +1,12 @@
+version: 1
+
+diagrams:
+  - docs/architecture/*.d2
+
+discover:
+  - app/services/*/
+  - app/jobs/*/
+
+# No `severity:` block on purpose. This fixture asserts the DEFAULT severity
+# for UNBOUND, which is `warn` (O3). Overriding it here would test the config
+# loader instead of the decision.

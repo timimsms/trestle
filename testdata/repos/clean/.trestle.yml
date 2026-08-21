@@ -1,0 +1,17 @@
+version: 1
+
+diagrams:
+  - docs/architecture/*.d2
+
+discover:
+  - app/services/*/
+  - app/adapters/*/
+
+# Real code deliberately owned by no node. ORPHAN-checked (L11): this entry
+# exists, so it stays quiet.
+shared:
+  - lib/http_client/**
+
+# Not architecturally real. Never seen, never ORPHAN-checked.
+exclude:
+  - "**/*_test.rb"

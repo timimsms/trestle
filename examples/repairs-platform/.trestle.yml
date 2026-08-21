@@ -1,0 +1,25 @@
+version: 1
+
+diagrams:
+  - docs/architecture/*.d2
+
+discover:
+  - app/services/*/
+  - app/jobs/*/
+
+# Real code, deliberately owned by no node. Enumerated, never blanket.
+shared:
+  - lib/http_client/**
+  - lib/logging/**
+  - app/middleware/**
+
+exclude:
+  - "**/*_spec.rb"
+  - "**/vendor/**"
+
+severity:
+  UNBOUND: warn
+
+render:
+  out: docs/architecture/rendered/
+  layout: elk

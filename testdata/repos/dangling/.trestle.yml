@@ -1,0 +1,9 @@
+version: 1
+
+diagrams:
+  - docs/architecture/*.d2
+
+# app/legacy/ is deliberately outside `discover`, so the dangling directive's
+# glob cannot also raise UNMAPPED or ORPHAN. This fixture tests one thing.
+discover:
+  - app/services/*/

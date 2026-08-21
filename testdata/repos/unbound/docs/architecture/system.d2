@@ -1,0 +1,22 @@
+# unbound: queue_dispatch has no directive of any kind. Expect 1 UNBOUND warning, exit 0.
+
+# @bind  svc_billing    app/services/billing/**
+# @bind  svc_ledger     app/services/ledger/**
+# @bind  job_reconciler app/jobs/reconciler/**
+# @infra db_primary
+
+svc_billing: Billing
+svc_ledger: Ledger
+job_reconciler: Reconciler
+
+queue_dispatch: Dispatch Queue {
+  shape: queue
+}
+
+db_primary: Postgres {
+  shape: cylinder
+}
+
+svc_billing -> queue_dispatch: enqueues
+queue_dispatch -> svc_ledger: consumes
+job_reconciler -> db_primary: polls

@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+
+      - name: gofmt
+        run: |
+          out=$(gofmt -l .)
+          if [ -n "$out" ]; then echo "unformatted:"; echo "$out"; exit 1; fi
+
+      - name: vet
+        run: go vet ./...
+
+      - name: build
+        run: go build ./...
+
+      - name: test
+        run: go test -race ./...
+
+      # internal/check is the product and must stay I/O-free (GAMEPLAN §4).
+      # A benchmark regression here means the 200ms target is slipping, and a
+      # check slower than a lint rule gets moved to a nightly job.
+      - name: bench core
+        run: go test -run=XXX -bench=. -benchmem ./internal/check/... || true
+
+      # Trestle checks Trestle, --strict, as a required job. If this repo will
+      # not hold itself to the standard it recommends, it has no business
+      # recommending it. This is also the only check in CI whose config was not
+      # written to make something pass, so it is the one that can still fail
+      # for a reason nobody anticipated — which is the project's own success
+      # criterion, and worth catching on a PR rather than in a demo.
+      - name: self-check
+        run: make self-check
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+      # v8 is the first action release that understands a `version: "2"`
+      # config; v6 installs golangci-lint v1.x and fails to parse .golangci.yml.
+      # The version is pinned rather than `latest` so CI and a developer's local
+      # `make lint` cannot disagree about what passes — a linter that is green
+      # locally and red in CI teaches people to ignore CI.
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.8.0

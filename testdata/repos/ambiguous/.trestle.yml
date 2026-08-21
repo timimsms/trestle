@@ -1,0 +1,9 @@
+version: 1
+
+diagrams:
+  - docs/architecture/*.d2
+
+# app/search/ is outside `discover` so the ambiguous directive's glob cannot
+# also raise UNMAPPED, and it matches real files so it cannot raise ORPHAN.
+discover:
+  - app/services/*/

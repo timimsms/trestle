@@ -1,0 +1,12 @@
+# orphan: `svc_reporting` binds a directory that was deleted. Expect 1 ORPHAN.
+
+# @bind svc_billing    app/services/billing/**
+# @bind svc_ledger     app/services/ledger/**
+# @bind svc_reporting  app/services/reporting/**
+
+svc_billing: Billing
+svc_ledger: Ledger
+svc_reporting: Reporting
+
+svc_billing -> svc_ledger: posts entries
+svc_reporting -> svc_ledger: reads entries

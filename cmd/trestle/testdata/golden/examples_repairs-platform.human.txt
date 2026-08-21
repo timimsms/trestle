@@ -1,0 +1,7 @@
+docs/architecture/system.d2
+
+  UNBOUND   tenant  (warn)
+            no @bind, @external, @infra or @ignore
+            hint: add one of `# @bind tenant <glob>`, `# @infra tenant`, `# @external tenant`, or `# @ignore tenant "<reason>"` — for a database or queue the answer is usually `@infra`
+
+0 failures, 1 warning

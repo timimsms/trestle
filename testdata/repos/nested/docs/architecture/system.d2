@@ -1,0 +1,30 @@
+# nested: qualified ID, suffix-resolved ID (O8), and an accounted-for container (O9). exit 0.
+
+# Fully qualified — matches platform.svc_work_orders by exact AbsID.
+# @bind     platform.svc_work_orders  app/services/work_orders/**
+# Unqualified — resolves to platform.svc_dispatch by unique dot-segment suffix.
+# @bind     svc_dispatch              app/services/dispatch/**
+# @infra    platform.db_primary
+# @external ext_lula
+
+# `platform` itself carries no directive. Every descendant is accounted for, so
+# it must not warn.
+
+direction: right
+
+platform: Repairs Platform {
+  svc_work_orders: Work Orders
+  svc_dispatch: Dispatch
+
+  db_primary: Postgres {
+    shape: cylinder
+  }
+}
+
+ext_lula: Lula {
+  style.stroke-dash: 2
+}
+
+platform.svc_work_orders -> platform.svc_dispatch: hands off
+platform.svc_work_orders -> platform.db_primary: persists
+platform.svc_dispatch -> ext_lula: dispatches job

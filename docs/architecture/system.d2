@@ -1,0 +1,88 @@
+# Trestle — internal architecture
+#
+# Bindings. Position-independent; grouped here for readability, per CONVENTIONS.md.
+# Node IDs are the Go package names, so every ID is greppable in the repo.
+
+# @bind   cli.cmd_trestle     cmd/trestle/**
+# @bind   cli.report          internal/report/**
+# @bind   engine.check        internal/check/**
+# @bind   engine.run          internal/run/**
+# @bind   inputs.config       internal/config/**
+# @bind   inputs.directive    internal/directive/**
+# @bind   inputs.nodes        internal/nodes/**
+# @bind   inputs.walk         internal/walk/**
+# @external ext_d2
+# @external ext_cobra
+# @external author
+# @external repo
+
+vars: {
+  d2-config: {
+    layout-engine: elk
+  }
+}
+
+direction: right
+
+author: Diagram author {
+  shape: person
+}
+
+repo: The repo being checked {
+  shape: cylinder
+}
+
+cli: CLI {
+  cmd_trestle: cmd/trestle {
+    tooltip: cobra wiring, exit codes — no logic
+  }
+  report: report {
+    tooltip: human + JSON, the runnable hints
+  }
+}
+
+engine: Engine {
+  run: run {
+    tooltip: the pipeline — the only place that orchestrates I/O
+  }
+  check: check {
+    tooltip: the product — pure, zero I/O, five codes
+    style.bold: true
+  }
+}
+
+inputs: Inputs {
+  walk: walk {
+    tooltip: the single filesystem walk
+  }
+  nodes: nodes {
+    tooltip: D2 AST -> node IDs, container paths intact
+  }
+  directive: directive {
+    tooltip: magic comment scanner
+  }
+  config: config {
+    tooltip: .trestle.yml
+  }
+}
+
+ext_d2: oss.terrastruct.com/d2 {
+  style.stroke-dash: 2
+}
+
+ext_cobra: spf13/cobra {
+  style.stroke-dash: 2
+}
+
+author -> cli.cmd_trestle: runs `trestle check`
+cli.cmd_trestle -> ext_cobra: flags, help
+cli.cmd_trestle -> engine.run: one pipeline call
+engine.run -> inputs.config: finds and validates
+engine.run -> inputs.walk: walks once
+engine.run -> inputs.nodes: compiles each diagram
+engine.run -> inputs.directive: scans each diagram
+inputs.walk -> repo: reads
+inputs.nodes -> ext_d2: d2compiler.Compile
+engine.run -> engine.check: listing + nodes + directives + config
+engine.check -> cli.report: violations
+cli.report -> author: exit code, hints
