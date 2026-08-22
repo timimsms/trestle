@@ -153,6 +153,11 @@ func (ix *index) eachFile(pattern string, fn func(i int)) int {
 		if ix.entries[i].IsDir || ix.marks[i] {
 			return
 		}
+		// A placeholder keeps a directory in git; it is not code, so a binding
+		// that matches only placeholders matches nothing and is an ORPHAN.
+		if isPlaceholder(ix.entries[i].Path) {
+			return
+		}
 		ix.marks[i] = true
 		touched = append(touched, i)
 	}

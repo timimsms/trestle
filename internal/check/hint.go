@@ -84,6 +84,16 @@ func orphanHint(glob string) string {
 	return fmt.Sprintf("renamed? `git log --diff-filter=D -- %s`", globAnchor(glob))
 }
 
+// placeholderOrphanHint is for a binding whose directory is right there and
+// holds nothing but a `.keep`. "renamed?" would send the author looking for
+// something that was never moved; the honest reading is that the box was drawn
+// before the code was written.
+func placeholderOrphanHint(glob string) string {
+	return fmt.Sprintf("`%s` exists but holds only placeholder files — nothing to bind yet. "+
+		"Remove the node until the code lands, or `# @ignore <node> \"declared, not built\"` "+
+		"if the box is load-bearing on the diagram now", globAnchor(glob))
+}
+
 func sharedOrphanHint(entry string) string {
 	return fmt.Sprintf("renamed? `git log --diff-filter=D -- %s` — otherwise drop `%s` from `shared:` in %s",
 		globAnchor(entry), entry, "`.trestle.yml`")

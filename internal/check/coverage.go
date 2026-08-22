@@ -70,7 +70,7 @@ func (c Coverage) Percent() int {
 func Measure(files []Entry, cfg *config.Config) Coverage {
 	cov := Coverage{}
 	for _, e := range files {
-		if !e.IsDir {
+		if !e.IsDir && !isPlaceholder(e.Path) {
 			cov.TotalFiles++
 		}
 	}
@@ -94,7 +94,7 @@ func Measure(files []Entry, cfg *config.Config) Coverage {
 			cov.Units++
 			lo, hi := ix.subtree(i)
 			for j := lo; j < hi; j++ {
-				if ix.entries[j].IsDir || counted[j] {
+				if ix.entries[j].IsDir || counted[j] || isPlaceholder(ix.entries[j].Path) {
 					continue
 				}
 				counted[j] = true
