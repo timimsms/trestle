@@ -6,6 +6,12 @@
     "warnings": 1
   },
   "disabled": [],
+  "coverage": {
+    "rules": 2,
+    "units": 3,
+    "files": 3,
+    "total_files": 6
+  },
   "violations": [
     {
       "code": "UNBOUND",

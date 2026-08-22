@@ -83,7 +83,7 @@ func writeHuman(w io.Writer, vs []check.Violation, opt Options) error {
 	o.printf("%s, %s%s\n",
 		plural(s.Failures, "failure"),
 		plural(s.Warnings, "warning"),
-		disabledNote(opt.Disabled))
+		disabledNote(opt.Disabled)+coverageNote(opt.Coverage))
 	if opt.Strict && s.Warnings > 0 {
 		// Without this line `--strict` prints "0 failures" and exits 1, which
 		// reads as a bug in the tool rather than as the flag doing its job.

@@ -6,5 +6,11 @@
     "warnings": 0
   },
   "disabled": [],
+  "coverage": {
+    "rules": 2,
+    "units": 3,
+    "files": 4,
+    "total_files": 8
+  },
   "violations": []
 }
