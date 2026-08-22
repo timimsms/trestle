@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/bmatcuk/doublestar/v4"
+
+	"github.com/timimsms/trestle/internal/lang"
 )
 
 // The corpus below is deliberately awkward. Prefix narrowing works by byte
@@ -314,7 +316,7 @@ func TestSuggestNodeID(t *testing.T) {
 		"app/services/Work Orders":   "svc_work_orders",
 	}
 	for in, want := range tests {
-		if got := suggestNodeID(in); got != want {
+		if got := suggestNodeID(in, lang.All); got != want {
 			t.Errorf("suggestNodeID(%q) = %q, want %q", in, got, want)
 		}
 	}

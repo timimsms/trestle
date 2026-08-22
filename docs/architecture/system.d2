@@ -12,6 +12,7 @@
 # @bind   engine.check        internal/check/**
 # @bind   engine.run          internal/run/**
 # @bind   inputs.config       internal/config/**
+# @bind   inputs.lang         internal/lang/**
 # @bind   inputs.directive    internal/directive/**
 # @bind   inputs.nodes        internal/nodes/**
 # @bind   inputs.walk         internal/walk/**
@@ -74,6 +75,9 @@ inputs: Inputs {
   directive: directive {
     tooltip: magic comment scanner
   }
+  lang: lang {
+    tooltip: what each ecosystem's layout looks like — pure constants, no imports
+  }
   config: config {
     tooltip: .trestle.yml
   }
@@ -96,6 +100,8 @@ author -> cli.cmd_trestle: runs `trestle check`
 cli.cmd_trestle -> ext_cobra: flags, help
 cli.cmd_trestle -> engine.run: one pipeline call
 engine.run -> inputs.config: finds and validates
+cli.scaffold -> inputs.lang: which shapes to propose
+engine.check -> inputs.lang: node-ID prefixes for hints
 engine.run -> inputs.walk: walks once
 engine.run -> inputs.nodes: compiles each diagram
 engine.run -> inputs.directive: scans each diagram
