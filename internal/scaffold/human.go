@@ -81,12 +81,25 @@ func (p *Plan) WriteProposal(w io.Writer) error {
 	}
 
 	if p.startsDiagram() {
-		o.printf("\nThe starter diagram is written with no nodes in it. Trestle does not invent\n"+
-			"boxes: a diagram generated from your directory listing would pass its own\n"+
-			"check while telling you nothing. So the first `trestle check` will report\n"+
-			"%d UNMAPPED — one per directory above — and each one carries the exact\n"+
-			"`@bind` line to paste into the diagram. That is the to-do list, not a\n"+
-			"verdict on the repo.\n", p.Units())
+		o.printf("\nThe starter diagram is written with no nodes in it. Trestle does not invent\n" +
+			"boxes: a diagram generated from your directory listing would pass its own\n" +
+			"check while telling you nothing.\n")
+
+		// "0 UNMAPPED — one per directory above" is nonsense when there is no
+		// directory above, and it was what a real repo saw: detection found
+		// nothing, and the transcript still promised a to-do list. A run that
+		// watches nothing needs to say so, not describe a list it cannot produce.
+		if p.Units() > 0 {
+			o.printf("So the first `trestle check` will report %d UNMAPPED — one per\n"+
+				"directory above — and each one carries the exact `@bind` line to paste\n"+
+				"into the diagram. That is the to-do list, not a verdict on the repo.\n",
+				p.Units())
+		} else {
+			o.printf("With no `discover:` rules, the first `trestle check` will report nothing\n" +
+				"at all — not because the repo is clean, but because nothing is being\n" +
+				"watched. `check` says so on its summary line every run until you fill\n" +
+				"`discover:` in.\n")
+		}
 	}
 	return o.w.Flush()
 }

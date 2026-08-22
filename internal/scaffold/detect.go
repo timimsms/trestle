@@ -48,6 +48,53 @@ var candidates = []string{
 	"internal/*/",
 	"pkg/*/",
 	"cmd/*/",
+	// Canonical Rails, and last on purpose.
+	//
+	// Rails' real convention is one directory per *layer* under `app/` with
+	// flat files inside — `app/models`, `app/controllers`, `app/agents`.
+	// `app/services/` is a community pattern that `rails new` does not create,
+	// so a repo that follows the framework matched nothing here until this
+	// shape existed: a real 600-file Rails app produced one rule covering 27
+	// files, and a green check over 4% of itself.
+	//
+	// It sits last because the specific shapes above claim their directories
+	// first, and any unit this leaves that merely *contains* another proposed
+	// unit is dropped below. Otherwise a repo with `app/services/billing/`
+	// would be offered both `app/services` and `app/services/billing` as units,
+	// which nests `discover:` rules inside each other.
+	"app/*/",
+}
+
+// anchors returns the directories a layout shape could start at: the repo root
+// and every top-level directory.
+//
+// Anchoring only at the repo root is wrong whenever the source tree is not
+// there, which is ordinary. A real Go repo keeps `go.mod` at the top and its
+// packages under `api/`, so `internal/*/` and `cmd/*/` matched nothing, `init`
+// proposed zero rules, and it wrote `discover: []` — a config under which
+// UNMAPPED can never fire. The shapes were right; they were one directory too
+// high. `api/`, `server/`, `backend/`, `src/` as the home of the real tree is
+// common in every language.
+//
+// A marker file like go.mod is not the signal, because it sits at the module
+// root rather than at the source root, and those are routinely different.
+//
+// Over-proposal is bounded by what already governs every other shape: a rule is
+// only offered when it matches a directory that has files beneath it, nested
+// units are dropped, and the whole proposal is shown for confirmation before a
+// byte is written. `init` is allowed to guess once, visibly (O2).
+func anchors(l *walk.Listing) []string {
+	out := []string{""}
+	for _, e := range l.Entries {
+		if !e.IsDir || strings.Contains(e.Path, "/") {
+			continue
+		}
+		if strings.HasPrefix(e.Path, ".") {
+			continue
+		}
+		out = append(out, e.Path)
+	}
+	return out
 }
 
 // Unit is one directory a proposed `discover:` rule matches today.
@@ -115,7 +162,20 @@ func Detect(l *walk.Listing) []Rule {
 	index := make(map[string]slot)
 	rules := make([]Rule, 0, len(candidates))
 
-	for _, glob := range candidates {
+	roots := anchors(l)
+
+	anchored := make([]string, 0, len(candidates)*len(roots))
+	for _, root := range roots {
+		for _, glob := range candidates {
+			if root == "" {
+				anchored = append(anchored, glob)
+				continue
+			}
+			anchored = append(anchored, root+"/"+glob)
+		}
+	}
+
+	for _, glob := range anchored {
 		pat := strings.TrimSuffix(glob, "/")
 		r := Rule{Glob: glob}
 		for _, e := range l.Entries {
@@ -149,6 +209,8 @@ func Detect(l *walk.Listing) []Rule {
 		}
 	}
 
+	rules = dropNestedUnits(rules)
+
 	// A shape whose every match is empty is a shape this repo does not really
 	// use — a leftover directory, or one git is not even tracking.
 	out := rules[:0]
@@ -158,6 +220,51 @@ func Detect(l *walk.Listing) []Rule {
 			total += u.Files
 		}
 		if total > 0 {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+// dropNestedUnits removes any proposed unit that contains another proposed
+// unit, and any rule left with none.
+//
+// `discover:` units must not nest. A repo with both `app/services/` and the
+// broader `app/*/` shape would otherwise be offered `app/services` *and*
+// `app/services/billing` as separate things needing owners — the outer one can
+// never be satisfied without also claiming the inner one, so it reports
+// UNMAPPED forever no matter how the diagram is written.
+//
+// The deeper unit wins, which is what Spike 01 measured: at depth 2 a unit is a
+// box somebody would draw, and its parent is the container it lives in.
+func dropNestedUnits(rules []Rule) []Rule {
+	all := make(map[string]bool)
+	for _, r := range rules {
+		for _, u := range r.Units {
+			all[u.Path] = true
+		}
+	}
+
+	contains := func(p string) bool {
+		for other := range all {
+			if len(other) > len(p) && strings.HasPrefix(other, p+"/") {
+				return true
+			}
+		}
+		return false
+	}
+
+	out := rules[:0]
+	for _, r := range rules {
+		kept := r.Units[:0]
+		for _, u := range r.Units {
+			if contains(u.Path) {
+				continue
+			}
+			kept = append(kept, u)
+		}
+		r.Units = kept
+		if len(r.Units) > 0 {
 			out = append(out, r)
 		}
 	}
