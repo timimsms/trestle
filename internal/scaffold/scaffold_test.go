@@ -349,3 +349,45 @@ func TestPrepareReportsTheExistingDiscoverList(t *testing.T) {
 		t.Error("a rule the config already has was reported as missing")
 	}
 }
+
+// The bootstrap procedure is the answer to "the diagram is empty, now what".
+// init deliberately writes no nodes, so the stanza has to say how to get from
+// an empty canvas to a real diagram — otherwise the empty-diagram decision
+// just relocates the problem instead of solving it.
+func TestAgentsStanzaExplainsHowToStart(t *testing.T) {
+	root := repo(t, "app/services/billing/billing.rb")
+	if err := plan(t, root).Apply(); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+
+	got := read(t, root, AgentsPath)
+
+	for _, want := range []string{
+		"first diagram",       // the section exists
+		"--format=json",       // names the machine-readable inventory
+		"Ask about the edges", // the step that needs a human
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("the AGENTS.md stanza is missing %q", want)
+		}
+	}
+}
+
+// Edges are the one thing `check` cannot verify, so a wrong one is never
+// contradicted by anything downstream. The stanza must tell an agent to ask
+// rather than infer, and must say why — a rule without its reason is one an
+// agent will optimize away when inferring looks faster.
+func TestAgentsStanzaWarnsAgainstInferringEdges(t *testing.T) {
+	root := repo(t, "app/services/billing/billing.rb")
+	if err := plan(t, root).Apply(); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+
+	got := read(t, root, AgentsPath)
+	if !strings.Contains(got, "Do not infer") {
+		t.Error("the stanza does not tell agents to ask about edges rather than infer them")
+	}
+	if !strings.Contains(got, "cannot verify") {
+		t.Error("the stanza states the rule without the reason it exists")
+	}
+}
