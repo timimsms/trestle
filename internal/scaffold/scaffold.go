@@ -63,6 +63,8 @@ import (
 	"github.com/timimsms/trestle"
 	"github.com/timimsms/trestle/internal/config"
 	"github.com/timimsms/trestle/internal/walk"
+
+	"github.com/timimsms/trestle/internal/lang"
 )
 
 // Action is what `init` intends to do with one file.
@@ -108,6 +110,10 @@ type Plan struct {
 	Root string
 	// Rules holds the proposed `discover:` rules with what each matches today.
 	Rules []Rule
+	// Langs holds the ecosystems detected from marker files. It decides which
+	// shapes were proposed above, and which test-file globs the emitted config
+	// offers — a Go repo should not be told to exclude `**/*_spec.rb`.
+	Langs []lang.Lang
 	// Existing holds the `discover:` rules the repo's config already has. It is
 	// non-nil only when there was a config to keep, and it is what turns a
 	// second `init` from a no-op into an answer: run it again after adding a
@@ -188,7 +194,7 @@ func Prepare(root string) (*Plan, error) {
 		return nil, err
 	}
 
-	p := &Plan{Root: abs, Rules: Detect(listing)}
+	p := &Plan{Root: abs, Rules: Detect(listing), Langs: DetectLangs(listing)}
 
 	// The config is the pivot. If the repo already has one it is authoritative,
 	// and the starter diagram — which exists only to keep the config `init`
@@ -216,7 +222,7 @@ func Prepare(root string) (*Plan, error) {
 	default:
 		cfgWritten = true
 		p.Artifacts = append(p.Artifacts, Artifact{
-			Path: ConfigPath, Action: Create, Payload: configFile(p.Rules),
+			Path: ConfigPath, Action: Create, Payload: configFile(p.Rules, p.Langs),
 		})
 	}
 

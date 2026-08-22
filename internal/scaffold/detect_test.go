@@ -46,23 +46,34 @@ func TestDetectRecognizesConventionalShapes(t *testing.T) {
 	}{
 		{
 			name:  "rails",
-			files: []string{"app/services/billing/billing.rb", "app/jobs/reconciler/job.rb"},
+			files: []string{"Gemfile", "app/services/billing/billing.rb", "app/jobs/reconciler/job.rb"},
 			want:  []string{"app/services/*/", "app/jobs/*/"},
 		},
 		{
 			name:  "js monorepo",
-			files: []string{"packages/db/index.ts", "apps/web/main.ts"},
+			files: []string{"package.json", "packages/db/index.ts", "apps/web/main.ts"},
 			want:  []string{"packages/*/", "apps/*/"},
 		},
 		{
 			name:  "go",
-			files: []string{"internal/check/check.go", "cmd/trestle/main.go", "pkg/api/api.go"},
+			files: []string{"go.mod", "internal/check/check.go", "cmd/trestle/main.go", "pkg/api/api.go"},
 			want:  []string{"internal/*/", "pkg/*/", "cmd/*/"},
 		},
 		{
-			name:  "src and lib",
+			// A Go repo that also holds a `cmd/` directory full of Ruby would
+			// still only be offered Go shapes. Marker gating is what stops the
+			// tool guessing an ecosystem the repo is not using.
+			name:  "markers gate the shapes",
+			files: []string{"go.mod", "internal/db/db.go", "app/services/billing/billing.rb"},
+			want:  []string{"internal/*/"},
+		},
+		{
+			name:  "src and lib, no marker",
 			files: []string{"src/renderer/index.js", "lib/http_client/client.rb"},
-			want:  []string{"src/*/", "lib/*/"},
+			// Nothing identifies the ecosystem, so every shape is tried and the
+			// order is lang.All's. Proposing more than necessary is cheap here:
+			// a rule is only offered when it matches a directory with files.
+			want: []string{"lib/*/", "src/*/"},
 		},
 		{
 			// Everything at the root, one level deep. Proposing `*/` here would
@@ -156,4 +167,106 @@ func TestDetectHandlesNilListing(t *testing.T) {
 
 func sortEntries(l *walk.Listing) {
 	sort.Slice(l.Entries, func(i, j int) bool { return l.Entries[i].Path < l.Entries[j].Path })
+}
+
+// A source tree that does not sit at the repo root is ordinary, and anchoring
+// only there is how a real Go repo got `discover: []` — go.mod at the top,
+// every package under api/, so `internal/*/` and `cmd/*/` matched nothing and
+// `init` proposed no rules at all. The shapes were right; they were one
+// directory too high.
+func TestDetectFindsShapesBelowTheRepoRoot(t *testing.T) {
+	l := listing(
+		"go.mod",
+		"api/internal/db/db.go",
+		"api/internal/auth/auth.go",
+		"api/cmd/server/main.go",
+		"README.md",
+	)
+
+	rules := Detect(l)
+
+	got := map[string]int{}
+	for _, r := range rules {
+		got[r.Glob] = len(r.Units)
+	}
+	if got["api/internal/*/"] != 2 {
+		t.Errorf("api/internal/*/ matched %d units, want 2 — rules: %v", got["api/internal/*/"], got)
+	}
+	if got["api/cmd/*/"] != 1 {
+		t.Errorf("api/cmd/*/ matched %d units, want 1 — rules: %v", got["api/cmd/*/"], got)
+	}
+}
+
+// Canonical Rails is one directory per layer under app/ with flat files inside.
+// `app/services/` is a community pattern `rails new` never creates, so a repo
+// following the framework matched nothing until `app/*/` existed — a real
+// 600-file app produced one rule covering 27 files and a green check over 4%
+// of itself.
+func TestDetectRecognizesCanonicalRails(t *testing.T) {
+	l := listing(
+		"Gemfile",
+		"app/models/work_order.rb",
+		"app/controllers/orders_controller.rb",
+		"app/agents/planner.rb",
+		"config/routes.rb",
+	)
+
+	var units int
+	for _, r := range Detect(l) {
+		if r.Glob == "app/*/" {
+			units = len(r.Units)
+		}
+	}
+	if units != 3 {
+		t.Errorf("app/*/ matched %d units, want 3 (models, controllers, agents)", units)
+	}
+}
+
+// `discover:` units must not nest. With both the specific and the general Rails
+// shape available, a repo holding app/services/billing/ would otherwise be
+// offered `app/services` *and* `app/services/billing` — and the outer one can
+// never be satisfied without claiming the inner one, so it reports UNMAPPED
+// forever however the diagram is written.
+func TestDetectDropsUnitsThatContainOtherUnits(t *testing.T) {
+	l := listing(
+		"Gemfile",
+		"app/services/billing/billing.rb",
+		"app/models/order.rb",
+	)
+
+	var all []string
+	for _, r := range Detect(l) {
+		for _, u := range r.Units {
+			all = append(all, u.Path)
+		}
+	}
+
+	for _, u := range all {
+		for _, other := range all {
+			if u != other && strings.HasPrefix(other, u+"/") {
+				t.Errorf("%q contains %q; discover units must not nest (all: %v)", u, other, all)
+			}
+		}
+	}
+	// The deeper unit is the one Spike 01 measured as a box somebody would draw.
+	var hasBilling bool
+	for _, u := range all {
+		if u == "app/services/billing" {
+			hasBilling = true
+		}
+	}
+	if !hasBilling {
+		t.Errorf("app/services/billing was dropped in favour of its parent: %v", all)
+	}
+}
+
+// Anchoring at every top-level directory must not start proposing rules for
+// directories that merely exist. A shape is still only offered when it matches
+// a directory with files beneath it.
+func TestDetectDoesNotProposeShapesThatAreNotThere(t *testing.T) {
+	l := listing("docs/notes.md", "scripts/deploy.sh", "README.md")
+
+	if rules := Detect(l); len(rules) != 0 {
+		t.Errorf("proposed %d rules for a repo with no recognized layout: %v", len(rules), rules)
+	}
 }

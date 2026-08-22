@@ -32,11 +32,41 @@ var ioPackages = map[string]string{
 }
 
 // allowedInternal is the dependency direction GAMEPLAN §4 fixes: check depends
-// on the three parse packages' types and on nothing else in the repo.
+// on the three parse packages' types, plus `lang`, and on nothing else.
+//
+// What the rule actually protects is two things — the engine does no I/O, and
+// it does not depend on the walk. Every entry here is checked against that
+// rather than against the list's length.
+//
+// `lang` was added deliberately. It is a leaf: pure constants describing each
+// ecosystem's conventions, importing nothing, so it can introduce neither I/O
+// nor a walk dependency. It is here because the node-ID prefixes it holds are
+// Rails vocabulary that used to live inside this package with nothing knowing
+// that — on a Go repo the hint suggested `svc_db` for a package named `db`,
+// which appears nowhere in the repo and collides with the `db_` prefix
+// CONVENTIONS reserves for datastores.
+//
+// Adding to this list is a decision, not a formality. The bar is: can the
+// import bring I/O or the filesystem walk into the engine, now or later?
 var allowedInternal = map[string]bool{
 	"github.com/timimsms/trestle/internal/config":    true,
 	"github.com/timimsms/trestle/internal/directive": true,
 	"github.com/timimsms/trestle/internal/nodes":     true,
+	"github.com/timimsms/trestle/internal/lang":      true,
+}
+
+// TestLangIsALeaf backs the reasoning above: `lang` is allowed into the engine
+// because it imports nothing, so it cannot smuggle I/O in behind it. If that
+// ever stops being true, this fails before the engine quietly gains a
+// dependency it was built to refuse.
+func TestLangIsALeaf(t *testing.T) {
+	pkg, err := build.ImportDir("../lang", 0)
+	if err != nil {
+		t.Fatalf("read internal/lang: %v", err)
+	}
+	for _, imp := range pkg.Imports {
+		t.Errorf("internal/lang imports %q; it is allowed into internal/check only because it is a leaf", imp)
+	}
 }
 
 // TestCheckIsIOFree is the standing constraint made mechanical. "internal/check
@@ -61,7 +91,7 @@ func TestCheckIsIOFree(t *testing.T) {
 				t.Errorf("internal/check %s import %q: %s", group, imp, why)
 			}
 			if strings.HasPrefix(imp, "github.com/timimsms/trestle/") && !allowedInternal[imp] {
-				t.Errorf("internal/check %s import %q: check depends on config, directive and nodes only", group, imp)
+				t.Errorf("internal/check %s import %q: not in the allowlist — see allowedInternal", group, imp)
 			}
 		}
 	}

@@ -3,6 +3,8 @@ package scaffold
 import (
 	"fmt"
 	"strings"
+
+	"github.com/timimsms/trestle/internal/lang"
 )
 
 // The three files `init` authors. CONVENTIONS.md is not here: it is embedded
@@ -42,7 +44,28 @@ const RenderOut = "docs/architecture/rendered/"
 const agentsMarker = "<!-- trestle -->"
 
 // configFile renders `.trestle.yml` for a set of proposed rules.
-func configFile(rules []Rule) string {
+// testGlobComment offers the exclude patterns for the ecosystems this repo
+// uses, commented out.
+//
+// Offered rather than applied, because excluding tests is a real decision with
+// a real cost — and at least one of these is a trap. On a Go repo,
+// uncommenting `**/*_test.go` can *increase* failures: an external test package
+// (`package foo_test`) may be the only file in its directory, so excluding it
+// turns a healthy unit into an empty one. Real repo, 7 failures to 9.
+func testGlobComment(langs []lang.Lang) string {
+	var b strings.Builder
+	b.WriteString("  # Test files usually belong here. Uncomment the pattern your repo uses,\n")
+	b.WriteString("  # but read what it removes first — excluding the only file in a directory\n")
+	b.WriteString("  # turns a unit Trestle was watching into one it reports as empty.\n")
+	for _, l := range langs {
+		for _, g := range l.TestGlobs {
+			b.WriteString("  # - \"" + g + "\"\n")
+		}
+	}
+	return strings.TrimRight(b.String(), "\n")
+}
+
+func configFile(rules []Rule, langs []lang.Lang) string {
 	var b strings.Builder
 
 	b.WriteString(`# Trestle configuration.
@@ -129,10 +152,7 @@ exclude:
   - "**/.git"
   - "**/node_modules"
   - "**/vendor"
-  # Test files usually belong here. Uncomment the pattern your repo uses:
-  # - "**/*_test.go"
-  # - "**/*_spec.rb"
-  # - "**/*.test.ts"
+` + testGlobComment(langs) + `
 
 # UNBOUND is a node with no directive of any kind. It warns rather than fails
 # because it is usually a modeling gap — a box that is genuinely not code — and

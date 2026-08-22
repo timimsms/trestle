@@ -5,49 +5,78 @@ import (
 	"strings"
 
 	"github.com/bmatcuk/doublestar/v4"
+	"github.com/timimsms/trestle/internal/lang"
 	"github.com/timimsms/trestle/internal/walk"
 )
 
-// candidates are the layout shapes `init` knows how to recognize, in the order
-// a proposal lists them.
+// candidatesFor returns the layout shapes worth proposing for this repo, in
+// proposal order, drawn from the ecosystems whose marker files are present.
 //
-// Every one of them is **depth 2** — one level inside a container directory —
-// because that is what Spike 01 measured. On a 4,007-file repo, depth 2 yielded
-// 64 units that correspond to boxes somebody would actually draw (`packages/db`,
-// `ui/src`); depth 3 fragmented the same repo into 118 units with 35 of them
-// holding two files or fewer. That is authoring burden, not architecture.
+// Gating on markers is a correctness fix, not tidying. Without it every shape
+// is tried everywhere, so a Ruby repo that happens to hold a `cmd/` directory
+// gets offered `cmd/*/` and the author has to work out that the tool guessed a
+// language wrong before they can dismiss the rule.
 //
-// The list is deliberately short and literal. O2 resolved toward configuration
-// over heuristics: `init` is allowed to guess once, visibly, at setup time, and
-// the user confirms before anything is written. `check` never guesses. Adding a
-// shape here that is merely plausible — `*/` at the repo root, say — moves the
-// guessing from "recognize a convention" to "invent one", and the cost lands on
-// whoever has to triage the UNMAPPED list.
+// Every shape is depth 2, per Spike 01: on a 4,007-file repo depth 2 yielded
+// units that correspond to boxes somebody would actually draw, while depth 3
+// fragmented the same repo into 118 units with 35 holding two files or fewer.
+// That is authoring burden, not architecture.
 //
-// The trailing slash is not decoration: `discover:` rules match directories, and
-// `app/services/*` without it matches nothing (GAMEPLAN §8, the trailing-slash
-// trap).
-var candidates = []string{
-	// Rails and its descendants: services and jobs are the two directories that
-	// hold things people draw boxes around.
-	"app/services/*/",
-	"app/jobs/*/",
-	// The same shape with no `app/` wrapper.
-	"services/*/",
-	// JS/TS monorepos. `packages/` and `apps/` are the npm/turbo/nx convention.
-	"packages/*/",
-	"apps/*/",
-	// One `src/` holding a directory per subsystem.
-	"src/*/",
-	// Shared layers. These usually resolve into `shared:` rather than into
-	// nodes, which is exactly why they are worth proposing: an entry in
-	// `shared:` is an accountable exemption, and code that is in neither place
-	// is code nobody has decided about.
-	"lib/*/",
-	// Go.
-	"internal/*/",
-	"pkg/*/",
-	"cmd/*/",
+// The trailing slash is not decoration: `discover:` rules match directories,
+// and `app/services/*` without it matches nothing (GAMEPLAN §8).
+func candidatesFor(l *walk.Listing) []string {
+	var out []string
+	for _, lg := range DetectLangs(l) {
+		out = append(out, lg.Discover...)
+	}
+	return out
+}
+
+// DetectLangs reports which ecosystems a repo appears to use, from its marker
+// files. Pure — markers are just paths in the listing.
+func DetectLangs(l *walk.Listing) []lang.Lang {
+	if l == nil {
+		return lang.All
+	}
+	present := make(map[string]bool, len(l.Entries))
+	for _, e := range l.Entries {
+		if !e.IsDir {
+			present[e.Path] = true
+		}
+	}
+	return lang.Detected(func(name string) bool { return present[name] })
+}
+
+// anchors returns the directories a layout shape could start at: the repo root
+// and every top-level directory.
+//
+// Anchoring only at the repo root is wrong whenever the source tree is not
+// there, which is ordinary. A real Go repo keeps `go.mod` at the top and its
+// packages under `api/`, so `internal/*/` and `cmd/*/` matched nothing, `init`
+// proposed zero rules, and it wrote `discover: []` — a config under which
+// UNMAPPED can never fire. The shapes were right; they were one directory too
+// high. `api/`, `server/`, `backend/`, `src/` as the home of the real tree is
+// common in every language.
+//
+// A marker file like go.mod is not the signal, because it sits at the module
+// root rather than at the source root, and those are routinely different.
+//
+// Over-proposal is bounded by what already governs every other shape: a rule is
+// only offered when it matches a directory that has files beneath it, nested
+// units are dropped, and the whole proposal is shown for confirmation before a
+// byte is written. `init` is allowed to guess once, visibly (O2).
+func anchors(l *walk.Listing) []string {
+	out := []string{""}
+	for _, e := range l.Entries {
+		if !e.IsDir || strings.Contains(e.Path, "/") {
+			continue
+		}
+		if strings.HasPrefix(e.Path, ".") {
+			continue
+		}
+		out = append(out, e.Path)
+	}
+	return out
 }
 
 // Unit is one directory a proposed `discover:` rule matches today.
@@ -112,10 +141,24 @@ func Detect(l *walk.Listing) []Rule {
 		rule int
 		unit int
 	}
+	roots := anchors(l)
+	candidates := candidatesFor(l)
+
 	index := make(map[string]slot)
 	rules := make([]Rule, 0, len(candidates))
 
-	for _, glob := range candidates {
+	anchored := make([]string, 0, len(candidates)*len(roots))
+	for _, root := range roots {
+		for _, glob := range candidates {
+			if root == "" {
+				anchored = append(anchored, glob)
+				continue
+			}
+			anchored = append(anchored, root+"/"+glob)
+		}
+	}
+
+	for _, glob := range anchored {
 		pat := strings.TrimSuffix(glob, "/")
 		r := Rule{Glob: glob}
 		for _, e := range l.Entries {
@@ -149,6 +192,8 @@ func Detect(l *walk.Listing) []Rule {
 		}
 	}
 
+	rules = dropNestedUnits(rules)
+
 	// A shape whose every match is empty is a shape this repo does not really
 	// use — a leftover directory, or one git is not even tracking.
 	out := rules[:0]
@@ -158,6 +203,51 @@ func Detect(l *walk.Listing) []Rule {
 			total += u.Files
 		}
 		if total > 0 {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+// dropNestedUnits removes any proposed unit that contains another proposed
+// unit, and any rule left with none.
+//
+// `discover:` units must not nest. A repo with both `app/services/` and the
+// broader `app/*/` shape would otherwise be offered `app/services` *and*
+// `app/services/billing` as separate things needing owners — the outer one can
+// never be satisfied without also claiming the inner one, so it reports
+// UNMAPPED forever no matter how the diagram is written.
+//
+// The deeper unit wins, which is what Spike 01 measured: at depth 2 a unit is a
+// box somebody would draw, and its parent is the container it lives in.
+func dropNestedUnits(rules []Rule) []Rule {
+	all := make(map[string]bool)
+	for _, r := range rules {
+		for _, u := range r.Units {
+			all[u.Path] = true
+		}
+	}
+
+	contains := func(p string) bool {
+		for other := range all {
+			if len(other) > len(p) && strings.HasPrefix(other, p+"/") {
+				return true
+			}
+		}
+		return false
+	}
+
+	out := rules[:0]
+	for _, r := range rules {
+		kept := r.Units[:0]
+		for _, u := range r.Units {
+			if contains(u.Path) {
+				continue
+			}
+			kept = append(kept, u)
+		}
+		r.Units = kept
+		if len(r.Units) > 0 {
 			out = append(out, r)
 		}
 	}
