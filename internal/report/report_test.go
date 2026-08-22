@@ -66,9 +66,15 @@ func TestHumanMatchesDesignSection5(t *testing.T) {
 		"            no @bind glob covers this path\n" +
 		"            hint: add `# @bind svc_notifications app/services/notifications/**`\n" +
 		"\n" +
-		"2 failures, 0 warnings\n"
+		"2 failures, 0 warnings · discover: 40 of 120 files\n"
 
-	if got := render(t, vs, report.FormatHuman, report.Options{}); got != want {
+	// DESIGN §5's sample predates the discover-scope clause. The clause is an
+	// addition to the summary line, not a change to the block format the spec
+	// actually pins — and it exists because two real repos produced a green
+	// check over near-zero coverage with nothing saying so. Coverage is passed
+	// here because this scenario plainly has discover rules: UNMAPPED fired.
+	opt := report.Options{Coverage: check.Coverage{Rules: 2, Units: 6, Files: 40, TotalFiles: 120}}
+	if got := render(t, vs, report.FormatHuman, opt); got != want {
 		t.Errorf("human output does not match DESIGN §5\n--- got ---\n%s\n--- want ---\n%s", got, want)
 	}
 }
@@ -77,7 +83,7 @@ func TestHumanMatchesDesignSection5(t *testing.T) {
 // run", and a check nobody believes ran is a check nobody trusts.
 func TestSummaryPrintsOnSuccess(t *testing.T) {
 	got := render(t, nil, report.FormatHuman, report.Options{})
-	if got != "0 failures, 0 warnings\n" {
+	if !strings.HasPrefix(got, "0 failures, 0 warnings") {
 		t.Errorf("clean run printed %q, want the summary line", got)
 	}
 }

@@ -83,6 +83,40 @@ type Options struct {
 	// warnings` from a check that inspected nothing. A green result must never
 	// be able to mean "nothing was looked at".
 	Disabled []check.Code
+
+	// Coverage reports how much of the repo `discover:` actually watches, from
+	// [check.Measure]. Printing it is the whole point: the first two real repos
+	// Trestle met both produced a green check over near-zero coverage — one
+	// watching 0 files, one watching 27 of 600 — and nothing in any output said
+	// so. The scope of a result belongs next to the result.
+	Coverage check.Coverage
+}
+
+// coverageNote renders the discover-scope clause for the summary line.
+//
+// It always says something when UNMAPPED cannot fire, including when no rules
+// are configured at all. DESIGN allows that state and it is silent by nature,
+// which is exactly the problem: `init` writes `discover: []` whenever its
+// layout detection comes up empty, and the first real Go repo Trestle met got
+// precisely that — a green check, exit 0, watching nothing, with no output
+// anywhere admitting it.
+//
+// A deliberate opt-out costs one clause per run. That is a fair price for the
+// alternative, which is a permanently passing badge over zero coverage. Same
+// reasoning as [DisabledCodes]: turning a check off is legal, doing it
+// invisibly is not.
+func coverageNote(c check.Coverage) string {
+	switch {
+	case c.Rules == 0:
+		return " · no discover rules — UNMAPPED cannot fire"
+	case !c.Watched():
+		// Rules exist and match nothing. UNMAPPED cannot fire, so a clean run
+		// here is not evidence of anything.
+		return " · discover: no directories matched — UNMAPPED cannot fire"
+	default:
+		return fmt.Sprintf(" · discover: %d of %d files",
+			c.Files, c.TotalFiles)
+	}
 }
 
 // disabledNote renders the parenthetical that qualifies a summary line, or ""

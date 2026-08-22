@@ -6,6 +6,12 @@
     "warnings": 0
   },
   "disabled": [],
+  "coverage": {
+    "rules": 1,
+    "units": 3,
+    "files": 4,
+    "total_files": 7
+  },
   "violations": [
     {
       "code": "UNMAPPED",

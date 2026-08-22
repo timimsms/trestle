@@ -95,13 +95,25 @@ func TestDisabledCodesAreReportedNotHidden(t *testing.T) {
 		}
 	})
 
-	t.Run("human summary is unqualified when nothing is disabled", func(t *testing.T) {
+	t.Run("no disabled clause when nothing is disabled", func(t *testing.T) {
 		var buf bytes.Buffer
 		if err := report.Write(&buf, nil, report.FormatHuman, report.Options{}); err != nil {
 			t.Fatal(err)
 		}
-		if got := strings.TrimSpace(buf.String()); got != "0 failures, 0 warnings" {
-			t.Errorf("clean summary = %q, want unqualified", got)
+		got := strings.TrimSpace(buf.String())
+		if !strings.HasPrefix(got, "0 failures, 0 warnings") {
+			t.Errorf("clean summary = %q", got)
+		}
+		for _, code := range check.Codes {
+			if strings.Contains(got, string(code)+" off") {
+				t.Errorf("summary names %s as disabled when nothing is: %q", code, got)
+			}
+		}
+		// The line is not bare, and should not be: with no discover rules
+		// configured, UNMAPPED cannot fire, and a run that says nothing about
+		// that is the silent green two real repos already produced.
+		if !strings.Contains(got, "UNMAPPED cannot fire") {
+			t.Errorf("summary does not disclose that discover watches nothing: %q", got)
 		}
 	})
 }

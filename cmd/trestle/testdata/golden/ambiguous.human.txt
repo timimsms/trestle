@@ -4,4 +4,4 @@ docs/architecture/system.d2
             ambiguous node ID; it suffix-matches billing.svc_search and support.svc_search
             hint: qualify it — candidates: `billing.svc_search`, `support.svc_search`; e.g. `# @bind billing.svc_search app/search/legacy/**`
 
-1 failure, 0 warnings
+1 failure, 0 warnings · discover: 2 of 6 files

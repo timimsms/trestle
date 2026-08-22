@@ -191,7 +191,10 @@ func TestCleanRunStillPrintsASummary(t *testing.T) {
 	if code != 0 {
 		t.Errorf("exit = %d, want 0", code)
 	}
-	if out != "0 failures, 0 warnings\n" {
+	// Prefix, not equality: the summary line also carries the discover scope
+	// ("· discover: 4 of 8 files"), which exists so a green over almost no
+	// coverage cannot read as a green over all of it.
+	if !strings.HasPrefix(out, "0 failures, 0 warnings") {
 		t.Errorf("clean run printed %q", out)
 	}
 }

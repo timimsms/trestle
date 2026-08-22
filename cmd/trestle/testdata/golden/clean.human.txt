@@ -1,1 +1,1 @@
-0 failures, 0 warnings
+0 failures, 0 warnings · discover: 4 of 8 files

@@ -4,4 +4,4 @@
             no @bind glob covers this path
             hint: add `# @bind svc_notifications app/services/notifications/**` to a diagram, or add `app/services/notifications/**` to `shared:`
 
-1 failure, 0 warnings
+1 failure, 0 warnings · discover: 4 of 7 files

@@ -4,4 +4,4 @@ docs/architecture/system.d2
             @bind app/services/reporting/** matches 0 files
             hint: renamed? `git log --diff-filter=D -- app/services/reporting`
 
-1 failure, 0 warnings
+1 failure, 0 warnings · discover: 3 of 6 files

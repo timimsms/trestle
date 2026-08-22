@@ -179,8 +179,15 @@ docs/architecture/system.d2
             no @bind glob covers this path
             hint: add `# @bind svc_notifications app/services/notifications/**` to a diagram, or add `app/services/notifications/**` to `shared:`
 
-2 failures, 0 warnings
+2 failures, 0 warnings · discover: 40 of 120 files
 ```
+
+> **Amended after the first field trials.** The summary line gained a discover-scope clause.
+> Two real repos — one Go, one Rails — reached a green `trestle check` while watching 0 and 27
+> files respectively, because `init`'s layout detection did not fit them and nothing in any
+> output said so. A green result must never be able to mean "nothing was looked at", which is
+> the same rule that already governs `severity: off` and a zero-match `diagrams:`. When no
+> discover rule matches anything the clause reads `no discover rules — UNMAPPED cannot fire`.
 
 > **Corrected after Phase 4.** This block originally grouped `UNMAPPED` under the diagram, which
 > the tool cannot reproduce: `UNMAPPED` and the `shared:`/`discover:` `ORPHAN`s are sourced from

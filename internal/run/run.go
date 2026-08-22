@@ -141,6 +141,14 @@ func (c *Context) Input() check.Input {
 	return check.Input{Files: files, Diagrams: c.Diagrams, Config: c.Config}
 }
 
+// Coverage reports how much of the repo `discover:` watches, from the same
+// listing the engine checks. It is separate from Check because it describes the
+// scope of a result rather than the result, and the caller prints both.
+func (c *Context) Coverage() check.Coverage {
+	in := c.Input()
+	return check.Measure(in.Files, c.Config)
+}
+
 // Check runs the engine over the loaded context. It makes no decisions: the
 // violations come back with severities resolved from config, and the caller
 // decides what they mean for the exit code.

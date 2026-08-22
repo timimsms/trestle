@@ -60,6 +60,9 @@ func newCheckCmd(stdout io.Writer, exit *int) *cobra.Command {
 				// bare "0 failures, 0 warnings" from a check that inspected
 				// nothing.
 				Disabled: check.DisabledCodes(ctx.Config),
+				// Without this, a config watching 4% of the repo produces a
+				// green indistinguishable from one watching all of it.
+				Coverage: ctx.Coverage(),
 			}
 			if err := report.Write(stdout, violations, f, opt); err != nil {
 				return err

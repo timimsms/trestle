@@ -4,4 +4,4 @@ docs/architecture/system.d2
             no @bind, @external, @infra or @ignore
             hint: add one of `# @bind queue_dispatch <glob>`, `# @infra queue_dispatch`, `# @external queue_dispatch`, or `# @ignore queue_dispatch "<reason>"` — for a database or queue the answer is usually `@infra`
 
-0 failures, 1 warning
+0 failures, 1 warning · discover: 3 of 6 files

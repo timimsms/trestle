@@ -28,8 +28,19 @@ type document struct {
 	// none, so a consumer can tell "nothing disabled" from an older payload
 	// that could not say. A CI gate reading `summary.failures == 0` without
 	// checking this field is trusting a check that may have inspected nothing.
-	Disabled   []string        `json:"disabled"`
+	Disabled []string `json:"disabled"`
+	// Coverage is how much of the repo `discover:` watches. Always present, so
+	// a CI gate reading `summary.failures == 0` can tell a real green from one
+	// produced by watching nothing.
+	Coverage   coverageJSON    `json:"coverage"`
 	Violations []violationJSON `json:"violations"`
+}
+
+type coverageJSON struct {
+	Rules      int `json:"rules"`
+	Units      int `json:"units"`
+	Files      int `json:"files"`
+	TotalFiles int `json:"total_files"`
 }
 
 type summaryJSON struct {
@@ -58,10 +69,16 @@ type sourceJSON struct {
 
 func writeJSON(w io.Writer, vs []check.Violation, opt Options) error {
 	doc := document{
-		Version:    SchemaVersion,
-		Strict:     opt.Strict,
-		Summary:    summaryJSON(Summarize(vs)),
-		Disabled:   make([]string, 0, len(opt.Disabled)),
+		Version:  SchemaVersion,
+		Strict:   opt.Strict,
+		Summary:  summaryJSON(Summarize(vs)),
+		Disabled: make([]string, 0, len(opt.Disabled)),
+		Coverage: coverageJSON{
+			Rules:      opt.Coverage.Rules,
+			Units:      opt.Coverage.Units,
+			Files:      opt.Coverage.Files,
+			TotalFiles: opt.Coverage.TotalFiles,
+		},
 		Violations: make([]violationJSON, 0, len(vs)),
 	}
 	for _, c := range opt.Disabled {
