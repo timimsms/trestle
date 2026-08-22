@@ -131,6 +131,35 @@ Corollary: an **empty** discover unit can never be covered and will always fire 
 is correct — an empty service directory is a real finding — but it should carry a distinguishing
 hint rather than the generic "add a `@bind`" one.
 
+**Amended after the field trials — placeholder files are not code.** The corollary above was
+reasoned about a state git cannot store: a directory with no files is not committable, so the only
+shape it takes in a real repo is a directory holding `.keep` or `.gitkeep`. Two field trials found
+both halves of that mattering:
+
+- A node bound to a directory holding only `.keep` reported `matches 1 file` and **passed** — a box
+  claiming a service that does not exist, with `explain` confirming "no violations". That is a
+  silent green of the same family as `severity: off` and a zero-match `diagrams:`.
+- A Go repo had **7 of 15 packages declared and not yet written**, each holding a `.gitkeep`, and
+  no honest resolution available: `@bind` makes a box backed by a placeholder, `shared:` calls a
+  `.gitkeep` real code, and `exclude:` guarantees the check stays quiet on the day the code finally
+  lands.
+
+One rule answers both. A placeholder is not code, so:
+
+| | before | after |
+| --- | --- | --- |
+| `@bind` matching only placeholders | passes | **`ORPHAN`** — it claims code that is not there |
+| discover unit holding only placeholders | `UNMAPPED`, unresolvable | **silent** — no code, nothing to map |
+| real code lands beside the placeholder | — | **`UNMAPPED`**, exactly as intended |
+
+That is the signal a repo with declared-but-unbuilt packages actually wants, and it needed no new
+directive, config key or violation code — which is why it is an amendment here rather than a
+proposal to the ledger. A truly empty unit (untracked, working-tree only) keeps the old behavior
+and its distinguishing hint.
+
+It cannot be used to hide anything: silencing a real `UNMAPPED` this way would mean deleting the
+code, which is a larger act than the check was ever going to prevent.
+
 **Amended after Phase 3 — `shared:` confers coverage too.** The wording above said coverage comes
 from `@bind`, which read as a contradiction of DESIGN §4's table. Checked against the table:
 `shared` is explicitly marked ✅ *Suppresses UNMAPPED*. So O10's rule was incomplete, not wrong.

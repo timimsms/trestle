@@ -332,8 +332,8 @@ func (c *checker) checkBindings() {
 			Node:   b.node,
 			Path:   b.dir.Glob,
 			Source: b.dir.Source,
-			Detail: fmt.Sprintf("@bind %s matches 0 files", b.dir.Glob),
-			Hint:   orphanHint(b.dir.Glob),
+			Detail: c.orphanDetail(b.dir.Glob),
+			Hint:   c.orphanHintFor(b.dir.Glob),
 		})
 	}
 }
@@ -403,17 +403,76 @@ func (c *checker) checkDiscover() {
 	}
 }
 
+// orphanDetail and orphanHintFor distinguish "the path is gone" from "the path
+// is there and empty". Both are ORPHAN — a binding claiming code that does not
+// exist — but they send the author to completely different places.
+func (c *checker) orphanDetail(glob string) string {
+	if c.matchesOnlyPlaceholders(glob) {
+		return fmt.Sprintf("@bind %s matches only placeholder files", glob)
+	}
+	return fmt.Sprintf("@bind %s matches 0 files", glob)
+}
+
+func (c *checker) orphanHintFor(glob string) string {
+	if c.matchesOnlyPlaceholders(glob) {
+		return placeholderOrphanHint(glob)
+	}
+	return orphanHint(glob)
+}
+
+// matchesOnlyPlaceholders reports whether a glob matches at least one file and
+// every one of them is a placeholder.
+func (c *checker) matchesOnlyPlaceholders(glob string) bool {
+	found := false
+	c.ix.each(glob, func(i int, e Entry) {
+		if e.IsDir {
+			lo, hi := c.ix.subtree(i)
+			for j := lo; j < hi; j++ {
+				if !c.ix.entries[j].IsDir && isPlaceholder(c.ix.entries[j].Path) {
+					found = true
+				}
+			}
+			return
+		}
+		if isPlaceholder(e.Path) {
+			found = true
+		}
+	})
+	return found
+}
+
 func (c *checker) checkUnit(i int, e Entry) {
 	lo, hi := c.ix.subtree(i)
-	files := 0
+	files, placeholders := 0, 0
 	for j := lo; j < hi; j++ {
 		if c.ix.entries[j].IsDir {
+			continue
+		}
+		if isPlaceholder(c.ix.entries[j].Path) {
+			placeholders++
 			continue
 		}
 		files++
 		if c.covered[j] {
 			return
 		}
+	}
+
+	// A unit holding only placeholders is a package this repo has declared and
+	// not written yet. UNMAPPED means code exists that the diagram never
+	// learned about, and here no code exists — so there is nothing to report
+	// until a real file lands, at which point this fires exactly as intended.
+	//
+	// This amends O10's corollary, which said an empty unit always fires. That
+	// was reasoned about a state git cannot store: a directory with no files is
+	// not committable, so the only shape this case takes in a real repo is the
+	// placeholder one. A Go repo where 7 of 15 packages were declared-but-empty
+	// had no honest resolution available — binding made a box backed by a
+	// `.gitkeep`, `shared:` called a `.gitkeep` real code, and `exclude:`
+	// guaranteed the check would stay silent on the day the code finally
+	// arrived.
+	if files == 0 && placeholders > 0 {
+		return
 	}
 
 	unit := e.Path + "/"
