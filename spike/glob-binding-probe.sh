@@ -117,9 +117,17 @@ while read -r unit; do
   grep -E "^${unit}/" "$TMP/files_now"  | sort > "$TMP/_n"
   lost=$(comm -23 "$TMP/_b" "$TMP/_n" | wc -l | tr -d ' ')
   pct=$(( lost * 100 / base_n ))
-  if [[ "$pct" -ge "$GUT_THRESHOLD" ]]; then
-    now_n=$(awk -v u="$unit" '$1==u{print $2}' "$TMP/units_now")
-    printf '%s %s %s %s\n' "$unit" "$pct" "$lost" "${now_n:-0}" >> "$TMP/q3"
+  now_n=$(awk -v u="$unit" '$1==u{print $2}' "$TMP/units_now"); now_n=${now_n:-0}
+
+  # High turnover alone is not Q3. A unit that replaced its original files and
+  # ended up LARGER has not been gutted, rewritten-down, or absorbed — it grew,
+  # which is Q4's story rather than a false-negative risk.
+  #
+  # Without this, a directory that went from 1 file to 9 scores "100% replaced"
+  # and trips the Q3 > Q2 FAIL verdict on its own. That happened on a real repo
+  # and would have read as "do not build" to anyone running the probe cold.
+  if [[ "$pct" -ge "$GUT_THRESHOLD" && "$now_n" -le "$base_n" ]]; then
+    printf '%s %s %s %s\n' "$unit" "$pct" "$lost" "$now_n" >> "$TMP/q3"
   fi
 done < <(comm -12 "$TMP/ub" "$TMP/un")
 
@@ -135,6 +143,12 @@ if [[ "$Q3" -gt 0 ]]; then
   say "    (a glob bound to these stays GREEN — this is silent staleness)"
   sort -k2 -rn "$TMP/q3" | head -20 \
     | awk '{printf "      %-42s %3s%% replaced  (%s lost, %s files now)\n", $1, $2, $3, $4}'
+  say ""
+  say "    Read this list before trusting the verdict below. Q3 only counts against"
+  say "    the design for units you would actually bind to a diagram node. A gutted"
+  say "    docs/ or scripts/ directory is real churn and nobody would have drawn a"
+  say "    box for it, so it cannot be a false negative in a check that never"
+  say "    watched it. Discount those and re-read the numbers."
 fi
 
 # --- Q4: UNMAPPED true positives ----------------------------------------------
