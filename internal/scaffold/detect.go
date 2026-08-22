@@ -5,64 +5,46 @@ import (
 	"strings"
 
 	"github.com/bmatcuk/doublestar/v4"
+	"github.com/timimsms/trestle/internal/lang"
 	"github.com/timimsms/trestle/internal/walk"
 )
 
-// candidates are the layout shapes `init` knows how to recognize, in the order
-// a proposal lists them.
+// candidatesFor returns the layout shapes worth proposing for this repo, in
+// proposal order, drawn from the ecosystems whose marker files are present.
 //
-// Every one of them is **depth 2** — one level inside a container directory —
-// because that is what Spike 01 measured. On a 4,007-file repo, depth 2 yielded
-// 64 units that correspond to boxes somebody would actually draw (`packages/db`,
-// `ui/src`); depth 3 fragmented the same repo into 118 units with 35 of them
-// holding two files or fewer. That is authoring burden, not architecture.
+// Gating on markers is a correctness fix, not tidying. Without it every shape
+// is tried everywhere, so a Ruby repo that happens to hold a `cmd/` directory
+// gets offered `cmd/*/` and the author has to work out that the tool guessed a
+// language wrong before they can dismiss the rule.
 //
-// The list is deliberately short and literal. O2 resolved toward configuration
-// over heuristics: `init` is allowed to guess once, visibly, at setup time, and
-// the user confirms before anything is written. `check` never guesses. Adding a
-// shape here that is merely plausible — `*/` at the repo root, say — moves the
-// guessing from "recognize a convention" to "invent one", and the cost lands on
-// whoever has to triage the UNMAPPED list.
+// Every shape is depth 2, per Spike 01: on a 4,007-file repo depth 2 yielded
+// units that correspond to boxes somebody would actually draw, while depth 3
+// fragmented the same repo into 118 units with 35 holding two files or fewer.
+// That is authoring burden, not architecture.
 //
-// The trailing slash is not decoration: `discover:` rules match directories, and
-// `app/services/*` without it matches nothing (GAMEPLAN §8, the trailing-slash
-// trap).
-var candidates = []string{
-	// Rails and its descendants: services and jobs are the two directories that
-	// hold things people draw boxes around.
-	"app/services/*/",
-	"app/jobs/*/",
-	// The same shape with no `app/` wrapper.
-	"services/*/",
-	// JS/TS monorepos. `packages/` and `apps/` are the npm/turbo/nx convention.
-	"packages/*/",
-	"apps/*/",
-	// One `src/` holding a directory per subsystem.
-	"src/*/",
-	// Shared layers. These usually resolve into `shared:` rather than into
-	// nodes, which is exactly why they are worth proposing: an entry in
-	// `shared:` is an accountable exemption, and code that is in neither place
-	// is code nobody has decided about.
-	"lib/*/",
-	// Go.
-	"internal/*/",
-	"pkg/*/",
-	"cmd/*/",
-	// Canonical Rails, and last on purpose.
-	//
-	// Rails' real convention is one directory per *layer* under `app/` with
-	// flat files inside — `app/models`, `app/controllers`, `app/agents`.
-	// `app/services/` is a community pattern that `rails new` does not create,
-	// so a repo that follows the framework matched nothing here until this
-	// shape existed: a real 600-file Rails app produced one rule covering 27
-	// files, and a green check over 4% of itself.
-	//
-	// It sits last because the specific shapes above claim their directories
-	// first, and any unit this leaves that merely *contains* another proposed
-	// unit is dropped below. Otherwise a repo with `app/services/billing/`
-	// would be offered both `app/services` and `app/services/billing` as units,
-	// which nests `discover:` rules inside each other.
-	"app/*/",
+// The trailing slash is not decoration: `discover:` rules match directories,
+// and `app/services/*` without it matches nothing (GAMEPLAN §8).
+func candidatesFor(l *walk.Listing) []string {
+	var out []string
+	for _, lg := range DetectLangs(l) {
+		out = append(out, lg.Discover...)
+	}
+	return out
+}
+
+// DetectLangs reports which ecosystems a repo appears to use, from its marker
+// files. Pure — markers are just paths in the listing.
+func DetectLangs(l *walk.Listing) []lang.Lang {
+	if l == nil {
+		return lang.All
+	}
+	present := make(map[string]bool, len(l.Entries))
+	for _, e := range l.Entries {
+		if !e.IsDir {
+			present[e.Path] = true
+		}
+	}
+	return lang.Detected(func(name string) bool { return present[name] })
 }
 
 // anchors returns the directories a layout shape could start at: the repo root
@@ -159,10 +141,11 @@ func Detect(l *walk.Listing) []Rule {
 		rule int
 		unit int
 	}
+	roots := anchors(l)
+	candidates := candidatesFor(l)
+
 	index := make(map[string]slot)
 	rules := make([]Rule, 0, len(candidates))
-
-	roots := anchors(l)
 
 	anchored := make([]string, 0, len(candidates)*len(roots))
 	for _, root := range roots {

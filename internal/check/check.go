@@ -37,6 +37,7 @@ import (
 
 	"github.com/timimsms/trestle/internal/config"
 	"github.com/timimsms/trestle/internal/directive"
+	"github.com/timimsms/trestle/internal/lang"
 	"github.com/timimsms/trestle/internal/nodes"
 )
 
@@ -153,8 +154,9 @@ func Check(in Input) []Violation {
 		cfg = &config.Config{Severity: config.DefaultSeverity()}
 	}
 	c := &checker{
-		cfg: cfg,
-		ix:  newIndex(in.Files),
+		cfg:   cfg,
+		ix:    newIndex(in.Files),
+		langs: detectLangs(in.Files),
 	}
 	c.covered = make([]bool, c.ix.len())
 
@@ -181,8 +183,26 @@ type checker struct {
 	covered []bool
 	out     []Violation
 
+	// langs is the ecosystems this repo appears to use, resolved once from the
+	// listing. Hints consult it for the node-ID prefix: `svc_` is Rails
+	// vocabulary and suggesting `svc_db` on a Go repo names something that
+	// appears nowhere in it.
+	langs []lang.Lang
+
 	binds []resolvedBind
 	diags []*resolvedDiagram
+}
+
+// detectLangs resolves which ecosystems a repo appears to use, from the listing
+// alone. Pure, like everything else here — marker files are just paths.
+func detectLangs(files []Entry) []lang.Lang {
+	present := make(map[string]bool, len(files))
+	for _, e := range files {
+		if !e.IsDir {
+			present[e.Path] = true
+		}
+	}
+	return lang.Detected(func(name string) bool { return present[name] })
 }
 
 // resolvedBind is a @bind that survived O11: its node resolved to exactly one
@@ -422,7 +442,7 @@ func (c *checker) checkUnit(i int, e Entry) {
 		Path:   unit,
 		Source: directive.Position{File: c.cfg.Path},
 		Detail: "no @bind glob covers this path",
-		Hint:   unmappedHint(e.Path),
+		Hint:   unmappedHint(e.Path, c.langs),
 	}
 	if files == 0 {
 		// O10's corollary: an empty unit can never be covered, so it always

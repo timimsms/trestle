@@ -3,6 +3,8 @@ package check
 import (
 	"fmt"
 	"path"
+
+	"github.com/timimsms/trestle/internal/lang"
 	"sort"
 	"strings"
 
@@ -96,9 +98,9 @@ func discoverOrphanHint(rule string) string {
 // unmappedHint produces the `# @bind ...` line to paste, with a node ID derived
 // from the unit's own path. DESIGN §5 shows exactly this hint for
 // app/services/notifications/.
-func unmappedHint(unit string) string {
+func unmappedHint(unit string, langs []lang.Lang) string {
 	return fmt.Sprintf("add `# @bind %s %s/**` to a diagram, or add `%s/**` to `shared:`",
-		suggestNodeID(unit), unit, unit)
+		suggestNodeID(unit, langs), unit, unit)
 }
 
 func emptyUnitHint(unit string) string {
@@ -230,29 +232,23 @@ func globAnchor(glob string) string {
 	return "."
 }
 
-// unitPrefixes maps the conventional container directory to the node ID prefix
-// CONVENTIONS.md asks for. It is deliberately tiny: guessing a prefix for a
-// directory nobody named is worse than omitting one.
-var unitPrefixes = map[string]string{
-	"services": "svc_",
-	"service":  "svc_",
-	"adapters": "adp_",
-	"adapter":  "adp_",
-	"jobs":     "job_",
-	"job":      "job_",
-	"workers":  "job_",
-}
-
 // suggestNodeID derives a node ID for an unmapped unit from its path:
 // app/services/notifications -> svc_notifications, per CONVENTIONS.md's
 // prefix-by-kind rule.
-func suggestNodeID(unit string) string {
+//
+// The prefix depends on the ecosystem, which is why langs is threaded in rather
+// than read from a package-level map. The prefixes are Rails vocabulary, and on
+// a Go repo they were actively wrong: `svc_db` for a package named `db` appears
+// nowhere in the repo, and `db_` is what CONVENTIONS reserves for datastores.
+// Go and Node contribute no prefixes, so the ID stays the package name — which
+// is already the identifier somebody would grep for.
+func suggestNodeID(unit string, langs []lang.Lang) string {
 	base := path.Base(unit)
 	if base == "." || base == "/" || base == "" {
 		return "node_id"
 	}
 	parent := path.Base(path.Dir(unit))
-	id := unitPrefixes[parent] + base
+	id := lang.Prefix(langs, parent) + base
 	return strings.Map(func(r rune) rune {
 		switch {
 		case r >= 'a' && r <= 'z', r >= '0' && r <= '9', r == '_':

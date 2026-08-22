@@ -46,23 +46,34 @@ func TestDetectRecognizesConventionalShapes(t *testing.T) {
 	}{
 		{
 			name:  "rails",
-			files: []string{"app/services/billing/billing.rb", "app/jobs/reconciler/job.rb"},
+			files: []string{"Gemfile", "app/services/billing/billing.rb", "app/jobs/reconciler/job.rb"},
 			want:  []string{"app/services/*/", "app/jobs/*/"},
 		},
 		{
 			name:  "js monorepo",
-			files: []string{"packages/db/index.ts", "apps/web/main.ts"},
+			files: []string{"package.json", "packages/db/index.ts", "apps/web/main.ts"},
 			want:  []string{"packages/*/", "apps/*/"},
 		},
 		{
 			name:  "go",
-			files: []string{"internal/check/check.go", "cmd/trestle/main.go", "pkg/api/api.go"},
+			files: []string{"go.mod", "internal/check/check.go", "cmd/trestle/main.go", "pkg/api/api.go"},
 			want:  []string{"internal/*/", "pkg/*/", "cmd/*/"},
 		},
 		{
-			name:  "src and lib",
+			// A Go repo that also holds a `cmd/` directory full of Ruby would
+			// still only be offered Go shapes. Marker gating is what stops the
+			// tool guessing an ecosystem the repo is not using.
+			name:  "markers gate the shapes",
+			files: []string{"go.mod", "internal/db/db.go", "app/services/billing/billing.rb"},
+			want:  []string{"internal/*/"},
+		},
+		{
+			name:  "src and lib, no marker",
 			files: []string{"src/renderer/index.js", "lib/http_client/client.rb"},
-			want:  []string{"src/*/", "lib/*/"},
+			// Nothing identifies the ecosystem, so every shape is tried and the
+			// order is lang.All's. Proposing more than necessary is cheap here:
+			// a rule is only offered when it matches a directory with files.
+			want: []string{"lib/*/", "src/*/"},
 		},
 		{
 			// Everything at the root, one level deep. Proposing `*/` here would
