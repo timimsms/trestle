@@ -64,3 +64,11 @@ jobs:
       - uses: golangci/golangci-lint-action@v8
         with:
           version: v2.8.0
+          # The action's config-schema check fetches a JSON schema from
+          # golangci-lint.run at lint time. That request timed out and failed a
+          # PR whose code was clean — a network dependency in the lint step,
+          # which is a poor thing to carry in a repo whose pitch is that CI
+          # should be reliable enough to block on. `golangci-lint run` still
+          # rejects a config it cannot parse, so the coverage lost is a schema
+          # check we get locally anyway.
+          verify: false
