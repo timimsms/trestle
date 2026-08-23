@@ -122,6 +122,45 @@ func (r Rule) Hidden() int {
 	return n
 }
 
+// slot locates a matched unit: which rule proposed it, and where in that rule's
+// list it sits. Kept so file counting is one pass over the listing.
+type slot struct {
+	rule int
+	unit int
+}
+
+// matchGlobs turns globs into rules, claiming each directory once.
+//
+// index is shared across calls so a second pass cannot re-propose a directory
+// the first already claimed; base is the rule offset those claims were recorded
+// against, so the indices stay correct when rules are appended.
+func matchGlobs(l *walk.Listing, globs []string, index map[string]slot, base int) []Rule {
+	out := make([]Rule, 0, len(globs))
+	for _, glob := range globs {
+		pat := strings.TrimSuffix(glob, "/")
+		r := Rule{Glob: glob}
+		for _, e := range l.Entries {
+			if !e.IsDir {
+				continue
+			}
+			if ok, err := doublestar.Match(pat, e.Path); err != nil || !ok {
+				continue
+			}
+			// A directory matched by two shapes would be counted twice and,
+			// worse, proposed twice. The first shape wins.
+			if _, taken := index[e.Path]; taken {
+				continue
+			}
+			index[e.Path] = slot{rule: base + len(out), unit: len(r.Units)}
+			r.Units = append(r.Units, Unit{Path: e.Path})
+		}
+		if len(r.Units) > 0 {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
 // Detect proposes `discover:` rules for a repo, given the one walk.
 //
 // It is a pure function of the listing — no filesystem access, no config — so
@@ -135,17 +174,13 @@ func Detect(l *walk.Listing) []Rule {
 		return nil
 	}
 
-	// Every candidate's matches, indexed by unit path, so file counting is one
-	// pass over the listing rather than one pass per rule.
-	type slot struct {
-		rule int
-		unit int
-	}
 	roots := anchors(l)
 	candidates := candidatesFor(l)
 
+	// Matches indexed by unit path, so file counting is one pass over the
+	// listing rather than one pass per rule, and so a directory two shapes both
+	// match is claimed once.
 	index := make(map[string]slot)
-	rules := make([]Rule, 0, len(candidates))
 
 	anchored := make([]string, 0, len(candidates)*len(roots))
 	for _, root := range roots {
@@ -158,27 +193,13 @@ func Detect(l *walk.Listing) []Rule {
 		}
 	}
 
-	for _, glob := range anchored {
-		pat := strings.TrimSuffix(glob, "/")
-		r := Rule{Glob: glob}
-		for _, e := range l.Entries {
-			if !e.IsDir {
-				continue
-			}
-			if ok, err := doublestar.Match(pat, e.Path); err != nil || !ok {
-				continue
-			}
-			// A directory matched by two candidates would be counted twice and,
-			// worse, proposed twice. The first shape in the list wins.
-			if _, taken := index[e.Path]; taken {
-				continue
-			}
-			index[e.Path] = slot{rule: len(rules), unit: len(r.Units)}
-			r.Units = append(r.Units, Unit{Path: e.Path})
-		}
-		if len(r.Units) > 0 {
-			rules = append(rules, r)
-		}
+	rules := matchGlobs(l, anchored, index, 0)
+
+	// Second pass: a workspace container matched above is not a unit, so
+	// reach the packages inside it. dropNestedUnits then removes the container,
+	// since it now contains proposed units.
+	if extra := containerGlobs(l, rules, DetectLangs(l)); len(extra) > 0 {
+		rules = append(rules, matchGlobs(l, extra, index, len(rules))...)
 	}
 
 	for _, e := range l.Entries {
@@ -204,6 +225,84 @@ func Detect(l *walk.Listing) []Rule {
 		}
 		if total > 0 {
 			out = append(out, r)
+		}
+	}
+	return out
+}
+
+// containerGlobs finds proposed units that are containers of units rather than
+// units, and returns the deeper globs that reach the real ones.
+//
+// A pnpm/npm workspace nests: astro's `packages/integrations/` holds fourteen
+// published packages and is not one itself. `packages/*/` matches the container,
+// so a single binding on `packages/integrations/**` owns every adapter — and a
+// new adapter lands with nothing firing. That is precisely the blindspot
+// UNMAPPED exists to close, seeded by default on the shape npm repos actually
+// use, since `pnpm-workspace.yaml` says `packages/**/*` rather than
+// `packages/*`.
+//
+// The test is a marker file, which is exactly what makes it safe: a directory
+// that has no package.json while its children do is a container by the
+// ecosystem's own definition, not by a guess about names.
+//
+// Deliberately restricted to directories a base shape already matched. Run it
+// over the whole listing and `examples/` qualifies — twenty-five example
+// projects, each with a package.json, none of them architecture. Astro's
+// detection correctly leaves those alone, and this must not undo that.
+func containerGlobs(l *walk.Listing, rules []Rule, langs []lang.Lang) []string {
+	var markers []string
+	for _, lg := range langs {
+		markers = append(markers, lg.Markers...)
+	}
+	if len(markers) == 0 {
+		return nil
+	}
+
+	files := make(map[string]bool, len(l.Entries))
+	for _, e := range l.Entries {
+		if !e.IsDir {
+			files[e.Path] = true
+		}
+	}
+	hasMarker := func(dir string) bool {
+		for _, m := range markers {
+			if files[dir+"/"+m] {
+				return true
+			}
+		}
+		return false
+	}
+
+	dirs := make([]string, 0, len(l.Entries))
+	for _, e := range l.Entries {
+		if e.IsDir {
+			dirs = append(dirs, e.Path)
+		}
+	}
+
+	seen := make(map[string]bool)
+	var out []string
+	for _, r := range rules {
+		for _, u := range r.Units {
+			if hasMarker(u.Path) {
+				continue // a package in its own right
+			}
+			children := 0
+			for _, d := range dirs {
+				if path.Dir(d) == u.Path && hasMarker(d) {
+					children++
+				}
+			}
+			// One child is a directory that happens to hold a package, not a
+			// container of them. Two is a shape.
+			if children < 2 {
+				continue
+			}
+			glob := u.Path + "/*/"
+			if !seen[glob] {
+				seen[glob] = true
+				out = append(out, glob)
+			}
 		}
 	}
 	return out

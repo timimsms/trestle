@@ -82,6 +82,24 @@ func parseLine(pos Position, raw string) (*Directive, *SyntaxError) {
 	fields := strings.Fields(body)
 	kind := Kind(fields[0])
 
+	// A scoped package name is prose, not a mistyped directive.
+	//
+	// `# @astrojs/language-server is a devDependency bundled at build time` is
+	// how anyone writing about a JS package starts the sentence, and it used to
+	// fail the check with `unknown directive "@astrojs/language-server"`. In an
+	// npm repo `@types/`, `@babel/` and every workspace scope open a comment
+	// the same way, so this fired on ordinary prose in essentially every
+	// JS/TS repo.
+	//
+	// The discriminator is exact rather than heuristic: no directive name
+	// contains a slash, and every scoped package name does. A genuine typo like
+	// `@bnid` has no slash and is still reported — which is the case the
+	// unknown-directive error exists for, and the reason this is not simply
+	// "ignore anything unrecognized".
+	if strings.Contains(string(kind), "/") {
+		return nil, nil
+	}
+
 	bad := func(detail string) (*Directive, *SyntaxError) {
 		return nil, &SyntaxError{Source: pos, Raw: trimmed, Detail: detail, Want: Form(kind)}
 	}

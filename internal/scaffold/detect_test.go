@@ -270,3 +270,78 @@ func TestDetectDoesNotProposeShapesThatAreNotThere(t *testing.T) {
 		t.Errorf("proposed %d rules for a repo with no recognized layout: %v", len(rules), rules)
 	}
 }
+
+// A pnpm/npm workspace nests, and the container is not a unit.
+//
+// astro's `packages/integrations/` holds seventeen published packages and is
+// not one itself, so `packages/*/` matched the container — and a single binding
+// on `packages/integrations/**` would own every adapter, letting a new one land
+// with nothing firing. That is the blindspot UNMAPPED exists to close, seeded
+// by default, on the shape npm repos actually use: `pnpm-workspace.yaml` says
+// `packages/**/*`, not `packages/*`.
+func TestDetectReachesInsideWorkspaceContainers(t *testing.T) {
+	l := listing(
+		"package.json",
+		"packages/astro/package.json", "packages/astro/src/index.ts",
+		"packages/integrations/mdx/package.json", "packages/integrations/mdx/index.ts",
+		"packages/integrations/sitemap/package.json", "packages/integrations/sitemap/index.ts",
+	)
+
+	got := globs(Detect(l))
+	var hasInner, hasContainer bool
+	for _, g := range got {
+		switch g {
+		case "packages/integrations/*/":
+			hasInner = true
+		}
+	}
+	for _, r := range Detect(l) {
+		for _, u := range r.Units {
+			if u.Path == "packages/integrations" {
+				hasContainer = true
+			}
+		}
+	}
+
+	if !hasInner {
+		t.Errorf("packages/integrations/*/ was not proposed: %v", got)
+	}
+	if hasContainer {
+		t.Error("the container is still a unit; one binding on it would own every package inside")
+	}
+}
+
+// The container rule is restricted to directories a base shape already matched.
+// Run it over the whole listing and `examples/` qualifies — every example is a
+// project with its own package.json, and none of them are architecture. astro
+// has 25 of them.
+func TestDetectDoesNotReachIntoExamples(t *testing.T) {
+	l := listing(
+		"package.json",
+		"packages/astro/package.json", "packages/astro/src/index.ts",
+		"examples/blog/package.json", "examples/blog/src/page.astro",
+		"examples/portfolio/package.json", "examples/portfolio/src/page.astro",
+	)
+
+	for _, g := range globs(Detect(l)) {
+		if strings.HasPrefix(g, "examples/") {
+			t.Errorf("proposed %q; examples are not architecture", g)
+		}
+	}
+}
+
+// One child that happens to hold a package is a directory, not a container of
+// packages. Two is a shape.
+func TestDetectDoesNotExpandASingleChild(t *testing.T) {
+	l := listing(
+		"package.json",
+		"packages/astro/package.json", "packages/astro/src/index.ts",
+		"packages/tools/only/package.json", "packages/tools/only/index.ts",
+	)
+
+	for _, g := range globs(Detect(l)) {
+		if g == "packages/tools/*/" {
+			t.Error("expanded a container with a single child")
+		}
+	}
+}

@@ -452,3 +452,43 @@ func TestParseFileMissing(t *testing.T) {
 		t.Fatal("expected an error for a missing file")
 	}
 }
+
+// A scoped package name opens a comment; it is not a mistyped directive.
+//
+// `# @astrojs/language-server is a devDependency` used to fail the check with
+// `unknown directive`. In an npm repo `@types/`, `@babel/` and every workspace
+// scope start a sentence the same way, so this fired on ordinary prose in
+// essentially every JS/TS repo — found on a real one.
+func TestScopedPackageNamesAreProse(t *testing.T) {
+	for _, line := range []string{
+		"# @astrojs/language-server is a devDependency bundled at build time",
+		"# @types/node is only needed for the CLI",
+		"## @babel/core does the transform",
+		"#   @scope/pkg/deep is still prose",
+	} {
+		res := directive.Parse("system.d2", []byte(line))
+		if len(res.Syntax) != 0 {
+			t.Errorf("%q reported SYNTAX: %v", line, res.Syntax[0].Detail)
+		}
+		if len(res.Directives) != 0 {
+			t.Errorf("%q parsed as a directive", line)
+		}
+	}
+}
+
+// The discriminator is a slash, not "anything unrecognized". A genuine typo has
+// no slash and must still be reported — that is the case the unknown-directive
+// error exists for, and silently ignoring it would let a misspelled @bind
+// disappear.
+func TestTyposAreStillReported(t *testing.T) {
+	for _, line := range []string{
+		"# @bnid svc_billing app/services/billing/**",
+		"# @externl ext_stripe",
+		"# @infr db_primary",
+	} {
+		res := directive.Parse("system.d2", []byte(line))
+		if len(res.Syntax) != 1 {
+			t.Errorf("%q was not reported as SYNTAX", line)
+		}
+	}
+}
