@@ -43,7 +43,19 @@ trap 'rm -rf "$TMP"' EXIT
 hr()  { printf '%s\n' "------------------------------------------------------------"; }
 say() { printf '%s\n' "$*"; }
 
-EXCLUDE_RE='(^|/)(node_modules|vendor|\.git|dist|build|tmp|coverage|\.next|target|fixtures?)(/|$)'
+# Directories that are never a box on an architecture diagram.
+#
+# Dot-directories are tooling and process by convention — .github, .changes,
+# .claude, .next. They churn hard by design, and that made them the single
+# largest source of false Q3 events: across the repos probed so far, every Q3
+# hit that produced a FAIL verdict was a non-architectural directory, and one
+# was a changelog-fragment tree that turns over every release. A check that
+# never watched `.changes/v1.14` cannot have a false negative there.
+#
+# This changes recorded numbers: Gate A's repo counted `.agents`, `.claude` and
+# `.github` among its new units. Re-run and confirm the verdict still holds
+# rather than assuming it does.
+EXCLUDE_RE='(^|/)(node_modules|vendor|dist|build|tmp|coverage|target|fixtures?|\.[^/]+)(/|$)'
 
 # path -> unit directory at UNIT_DEPTH segments. Files shallower than the
 # depth have no unit and are dropped.
