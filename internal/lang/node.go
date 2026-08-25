@@ -14,6 +14,14 @@ var Node = Lang{
 		"packages/*/",
 		"apps/*/",
 		"src/*/",
+		// A JS repo that has not adopted workspaces keeps its shared layer in
+		// lib/ like everyone else. Without this a repo with lib/http-client and
+		// lib/logging at the root gets nothing proposed for either — the shared
+		// layer is undiscoverable, UNMAPPED can never fire on it, and the
+		// coverage clause does not catch the gap because the other rules matched
+		// fine. That is the "green while watching nothing" shape in the one form
+		// the safety net misses.
+		"lib/*/",
 	},
 	TestGlobs: []string{"**/*.test.ts", "**/*.test.js", "**/*.spec.ts"},
 	// No prefixes: a workspace directory name is the package name, the same

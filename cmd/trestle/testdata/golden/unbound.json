@@ -23,7 +23,7 @@
         "line": 12
       },
       "detail": "no @bind, @external, @infra or @ignore",
-      "hint": "add one of `# @bind queue_dispatch <glob>`, `# @infra queue_dispatch`, `# @external queue_dispatch`, or `# @ignore queue_dispatch \"<reason>\"` — for a database or queue the answer is usually `@infra`"
+      "hint": "add one of `# @bind queue_dispatch <glob>`, `# @infra queue_dispatch`, `# @external queue_dispatch`, or `# @ignore queue_dispatch \"<reason>\"` — this looks like infrastructure you own with no code to bind to, so `@infra`"
     }
   ]
 }
