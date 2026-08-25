@@ -40,7 +40,8 @@ Both gates in HANDOFF.md are cleared. Full numbers are recorded as ledger amendm
 
 ### Gate A — Spike 01 (O1): **PROCEED, with a caveat**
 
-Probed `paperclip` (3,172 commits, 4,007 files) at unit depths 1–4 over a 180-day window.
+Probed a private 4,007-file monorepo (3,172 commits, all inside the window) at unit
+depths 1–4 over 180 days.
 
 | Depth | Q2 orphan | Q3 silent | Q4 new | Signal |
 | --- | --- | --- | --- | --- |

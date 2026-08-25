@@ -71,7 +71,7 @@ If it never fires, it is decoration and should be deleted. This is the primary M
 
 Two repos were probed. Trestle itself returned zero at every depth — it is a docs-only repo with
 one commit, so it measures nothing and is reported here only to say it was tried. The real run was
-against `paperclip` (3,172 commits, 4,007 files, all inside the window), the one local repo under
+against a private monorepo (3,172 commits, 4,007 files, all inside the window) — the one repo to hand under
 enough structural change to produce signal.
 
 | Depth | Units today (at start) | Q2 orphan | Q3 silent | Q4 new | Signal |

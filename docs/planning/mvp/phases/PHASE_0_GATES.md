@@ -14,7 +14,7 @@ not be built. Both are now answered. This file is the record.
 **Verdict: PROCEED, with a recorded caveat.**
 
 Run `spike/glob-binding-probe.sh` against a repo with real structural history, sweeping
-`--unit-depth 1..4`. Probed `paperclip` at 180 days.
+`--unit-depth 1..4`. Probed a private 4,007-file monorepo at 180 days.
 
 | Depth | Units today (start) | Q2 orphan | Q3 silent | Q4 new | Signal |
 | --- | --- | --- | --- | --- | --- |
