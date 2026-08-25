@@ -118,10 +118,38 @@ func emptyUnitHint(unit string) string {
 		"or narrow the `discover:` rule that matches it", unit)
 }
 
+// kindAdvice turns a node ID's prefix into the directive that is almost
+// certainly right for it.
+//
+// CONVENTIONS asks for prefix-by-kind — `db_`, `queue_`, `ext_`, `svc_`, `job_`
+// — so the ID usually already says what the node is. The hint used to close
+// with "for a database or queue the answer is usually `@infra`" on every node,
+// including one named `ext_stripe`, where the answer is plainly `@external`.
+// Generic advice attached to a specific name reads as though it were about that
+// name.
+func kindAdvice(id string) string {
+	base := id
+	if i := strings.LastIndex(base, "."); i >= 0 {
+		base = base[i+1:]
+	}
+	switch {
+	case strings.HasPrefix(base, "ext_"):
+		return " — the `ext_` prefix says this is somebody else's system, so `@external`"
+	case strings.HasPrefix(base, "db_"), strings.HasPrefix(base, "queue_"),
+		strings.HasPrefix(base, "cache_"):
+		return " — this looks like infrastructure you own with no code to bind to, so `@infra`"
+	case strings.HasPrefix(base, "svc_"), strings.HasPrefix(base, "job_"),
+		strings.HasPrefix(base, "adp_"):
+		return " — this looks like code in this repo, so `@bind` with the glob that holds it"
+	default:
+		return " — for a database or queue the answer is usually `@infra`"
+	}
+}
+
 func unboundHint(id string) string {
 	return fmt.Sprintf("add one of `# @bind %s <glob>`, `# @infra %s`, `# @external %s`, "+
-		"or `# @ignore %s \"<reason>\"` — for a database or queue the answer is usually `@infra`",
-		id, id, id, id)
+		"or `# @ignore %s \"<reason>\"`%s",
+		id, id, id, id, kindAdvice(id))
 }
 
 // danglingHint names the closest existing node IDs by edit distance, because a
