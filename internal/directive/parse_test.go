@@ -110,7 +110,7 @@ func TestParseWellFormed(t *testing.T) {
 	}
 }
 
-// TestParseSyntax covers every malformed case named in PHASE_2_PARSERS §2.1,
+// TestParseSyntax covers every malformed case named in docs/DESIGN.md §2 §2.1,
 // plus the near-misses that share their code paths.
 func TestParseSyntax(t *testing.T) {
 	tests := []struct {
@@ -403,7 +403,7 @@ func TestFormCoversEveryKind(t *testing.T) {
 	}
 }
 
-// Acceptance: PHASE_2_PARSERS — the worked example yields exactly
+// Acceptance: docs/DESIGN.md §2 — the worked example yields exactly
 // 6 binds, 2 external, 2 infra, 1 ignore, and no syntax errors.
 func TestWorkedExample(t *testing.T) {
 	path := filepath.Join("..", "..", "examples", "repairs-platform", "system.d2")

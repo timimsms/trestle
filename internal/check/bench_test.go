@@ -88,7 +88,7 @@ func benchConfig() *config.Config {
 
 // BenchmarkCheck100k is the acceptance number: the whole engine, twenty
 // bindings, a discover rule and a shared entry, against a 100k-file listing.
-// Twenty bindings is the case PHASE_3 singles out — naive glob-per-path costs
+// Twenty bindings is the case docs/DESIGN.md §3 singles out — naive glob-per-path costs
 // ~140ms there, which is most of the budget on its own.
 func BenchmarkCheck100k(b *testing.B) {
 	files := syntheticListing()

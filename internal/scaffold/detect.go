@@ -23,7 +23,7 @@ import (
 // That is authoring burden, not architecture.
 //
 // The trailing slash is not decoration: `discover:` rules match directories,
-// and `app/services/*` without it matches nothing (GAMEPLAN §8).
+// and `app/services/*` without it matches nothing (docs/DECISIONS.md).
 func candidatesFor(l *walk.Listing) []string {
 	var out []string
 	for _, lg := range DetectLangs(l) {

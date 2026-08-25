@@ -44,7 +44,7 @@ import (
 // Code is a violation code. The set is closed at five; see [Codes].
 type Code string
 
-// The five violation codes. Do not add a sixth (GAMEPLAN §6).
+// The five violation codes. Do not add a sixth (docs/DESIGN.md §3).
 const (
 	CodeOrphan   Code = "ORPHAN"
 	CodeUnmapped Code = "UNMAPPED"
@@ -515,7 +515,7 @@ func (c *checker) checkUnit(i int, e Entry) {
 
 // checkUnbound reports nodes of unknown provenance.
 //
-// O9, stated as the single rule the two halves of GAMEPLAN §3 add up to: a
+// O9, stated as the single rule the two halves of docs/DECISIONS.md, Resolutions add up to: a
 // container never emits UNBOUND. If every descendant is accounted for the
 // container is a grouping device and there is nothing to report; if some
 // descendant is not, that descendant reports it. Never both — one modeling gap

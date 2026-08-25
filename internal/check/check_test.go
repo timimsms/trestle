@@ -599,7 +599,7 @@ queue_dispatch: Queue`
 // The taxonomy is duplicated across a package boundary: config restates the
 // five codes as strings because it cannot import this package. If the two lists
 // drift, `severity: {UNBOUND: warn}` silently stops applying — a config the user
-// wrote that quietly does nothing. Pin them together (GAMEPLAN §3).
+// wrote that quietly does nothing. Pin them together (docs/DECISIONS.md, Resolutions).
 func TestCodesMatchConfigCodes(t *testing.T) {
 	if len(Codes) != len(config.Codes) {
 		t.Fatalf("check has %d codes, config has %d; the taxonomy is closed at five", len(Codes), len(config.Codes))

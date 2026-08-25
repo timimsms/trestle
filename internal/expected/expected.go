@@ -60,7 +60,7 @@ import (
 const Filename = "EXPECTED"
 
 // Codes is the closed set of violation codes. There are five. Do not add a
-// sixth without a ledger entry — see GAMEPLAN §6.
+// sixth without a ledger entry — see docs/DESIGN.md §3.
 var Codes = []string{"ORPHAN", "UNMAPPED", "DANGLING", "UNBOUND", "SYNTAX"}
 
 func validCode(c string) bool {

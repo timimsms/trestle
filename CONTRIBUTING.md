@@ -25,11 +25,60 @@ configuration in it that was not written to make something pass.
 
 | File | Why |
 | --- | --- |
-| [`docs/planning/handoff/OVERVIEW.md`](docs/planning/handoff/OVERVIEW.md) | Scope, non-goals, and the decision ledger. **Read the ledger before proposing anything.** |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Scope, non-goals, and the decision ledger. **Read the ledger before proposing anything.** |
 | [`docs/planning/mvp/GAMEPLAN.md`](docs/planning/mvp/GAMEPLAN.md) | Architecture, resolved ambiguities, ranked risks |
-| [`docs/planning/handoff/DESIGN.md`](docs/planning/handoff/DESIGN.md) | Binding syntax and check semantics |
+| [`docs/DESIGN.md`](docs/DESIGN.md) | Binding syntax and check semantics |
 | [`AGENTS.md`](AGENTS.md) | The working contract — applies to humans too |
 | [`CONVENTIONS.md`](CONVENTIONS.md) | Diagram authoring. Ships with the product |
+
+## Architecture
+
+```
+conventions.go          package `trestle`: go:embed of CONVENTIONS.md, nothing else.
+cmd/trestle/            main + cobra wiring. Thin. No logic.
+internal/
+  config/               .trestle.yml load, validate, defaults, root discovery
+  directive/            magic-comment line scanner
+  nodes/                D2 AST -> node IDs (d2compiler)
+  walk/                 the single filesystem walk. All I/O lives here.
+  check/                THE PRODUCT. Pure. Zero I/O. Heavily tested.
+  render/               D2 library wrapper (Phase 6)
+  scaffold/             `trestle init` — layout detection, the emitted files (Phase 7)
+  report/               human + json formatting, golden-tested
+  expected/             fixture EXPECTED parser, shared by Phases 3 and 4
+  integration/          cross-seam guards — where two packages must agree
+testdata/repos/         ten fixture trees
+examples/repairs-platform/   the worked example — a live test input, not a doc
+spike/                  glob-binding-probe.sh (Gate A, keep for re-runs)
+```
+
+Dependency direction is one-way: `cmd` → everything; `check` → nothing but `config`,
+`directive`, `nodes` types. `check` importing `walk` is a design failure, and CI should
+eventually enforce that with an import-graph test.
+
+**Restating the I/O rule precisely**, because the original phrasing contradicted itself: "all
+filesystem I/O lives in `walk`" was written alongside explicit permission for `directive`,
+`nodes`, and `config` to open their own named input file. The rule that is actually meant:
+
+> **The repo walk lives in `walk`. `check` does no I/O at all.**
+
+`directive`, `nodes`, and `config` each expose a pure `Parse(path, src []byte)` primary with a
+thin `ParseFile` convenience. That is the shape they were built in, and it is the shape Phase 4
+should wire.
+
+**Pinned dependencies** (TECH_STACK, confirmed by Gate B):
+
+| Concern | Module |
+| --- | --- |
+| D2 | `oss.terrastruct.com/d2 v0.7.2` — pinned exactly |
+| CLI | `spf13/cobra` |
+| Config | `goccy/go-yaml` |
+| Globs | `bmatcuk/doublestar/v4` — non-negotiable, stdlib has no `**` |
+| Walk | stdlib `io/fs.WalkDir` |
+| Watch | `fsnotify/fsnotify` — Phase 6 only |
+| Directives | stdlib. Line scan + `strings.Fields`. No parser generator. |
+
+---
 
 ## The constraints, and why they are not negotiable by accident
 

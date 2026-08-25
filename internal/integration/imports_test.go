@@ -31,7 +31,7 @@ var ioPackages = map[string]string{
 	"github.com/timimsms/trestle/internal/walk": "importing walk drags io/fs across the seam; mirror the two fields instead",
 }
 
-// allowedInternal is the dependency direction GAMEPLAN §4 fixes: check depends
+// allowedInternal is the dependency direction CONTRIBUTING.md, Architecture fixes: check depends
 // on the three parse packages' types, plus `lang`, and on nothing else.
 //
 // What the rule actually protects is two things — the engine does no I/O, and

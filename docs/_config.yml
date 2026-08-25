@@ -1,0 +1,15 @@
+# GitHub Pages, served from docs/ on the default branch.
+#
+# Deliberately Jekyll's built-in theme rather than a docs generator: everything
+# under docs/ is written to be read as plain Markdown in the repo first, and a
+# site that only renders correctly after a build step is a second source of
+# truth waiting to drift from the first.
+title: Trestle
+description: >-
+  Keeps architecture diagrams honest — binds D2 diagram nodes to real repo
+  paths and fails CI when they diverge.
+theme: jekyll-theme-primer
+show_downloads: false
+
+exclude:
+  - architecture/rendered/

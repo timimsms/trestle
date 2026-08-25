@@ -23,7 +23,7 @@ import (
 //     opinion. The only non-zero exit is 2, and only when Trestle could not do
 //     the job at all.
 //   - **`--overlaps` is a flag, not a command.** The command surface is capped
-//     at four (GAMEPLAN §6), and "list the paths two nodes both claim" is a
+//     at four (docs/DESIGN.md §3), and "list the paths two nodes both claim" is a
 //     question about the same loaded repo.
 func newExplainCmd(stdout io.Writer) *cobra.Command {
 	var (

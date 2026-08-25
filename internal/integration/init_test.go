@@ -33,7 +33,7 @@ var oneFilePerShape = []string{
 // TestScaffoldedRulesFireUnmapped is the guard between the command that writes
 // `discover:` rules and the engine that evaluates them.
 //
-// The trap it exists to close is the trailing-slash one (GAMEPLAN §8):
+// The trap it exists to close is the trailing-slash one (docs/DECISIONS.md):
 // `app/services/*` matches nothing, while `app/services/*/` matches the
 // directory. A `discover:` rule that matches nothing is silent — UNMAPPED stops
 // firing and the check goes green while inspecting nothing — so an `init` that

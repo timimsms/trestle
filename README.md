@@ -165,7 +165,7 @@ gets written.
 
 A diagram editor, a WYSIWYG surface, a rendering engine, a hosted product, a model/view system,
 or a history layer. These are deliberate exclusions, not backlog items — see
-[`OVERVIEW.md`](docs/planning/handoff/OVERVIEW.md) for why each one is out.
+[`OVERVIEW.md`](docs/DECISIONS.md) for why each one is out.
 
 ## Documentation
 
@@ -178,9 +178,9 @@ or a history layer. These are deliberate exclusions, not backlog items — see
 | [`docs/DOGFOODING.md`](docs/DOGFOODING.md) | How to run the trial that decides whether this ships |
 | [`docs/planning/mvp/GAMEPLAN.md`](docs/planning/mvp/GAMEPLAN.md) | Build plan, gate verdicts, architecture |
 | [`docs/planning/mvp/phases/`](docs/planning/mvp/phases/) | Per-phase tasks and acceptance criteria |
-| [`docs/planning/handoff/OVERVIEW.md`](docs/planning/handoff/OVERVIEW.md) | Scope, non-goals, decision ledger L1–L12 |
-| [`docs/planning/handoff/DESIGN.md`](docs/planning/handoff/DESIGN.md) | Binding syntax, check semantics, CLI surface |
-| [`docs/planning/handoff/TECH_STACK.md`](docs/planning/handoff/TECH_STACK.md) | Language, dependencies, layout, testing |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Scope, non-goals, decision ledger L1–L12 |
+| [`docs/DESIGN.md`](docs/DESIGN.md) | Binding syntax, check semantics, CLI surface |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Language, dependencies, layout, testing |
 | [`examples/repairs-platform/`](examples/repairs-platform/) | Worked example — a live test input |
 
 ## Development
