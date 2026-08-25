@@ -171,6 +171,7 @@ or a history layer. These are deliberate exclusions, not backlog items — see
 
 | File | Contains |
 | --- | --- |
+| [`docs/TOUR.md`](docs/TOUR.md) | A guided walkthrough: a repo from nothing to a working check, then broken on purpose |
 | [`CONVENTIONS.md`](CONVENTIONS.md) | The agent contract. Ships with the product. |
 | [`CHANGELOG.md`](CHANGELOG.md) | What changed per release, and what changed *behaviour* |
 | [`SECURITY.md`](SECURITY.md) | Scope, and how to report |
