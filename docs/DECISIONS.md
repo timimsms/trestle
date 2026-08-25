@@ -407,13 +407,18 @@ command.
 
 ## Document map
 
-| File | Contains | Audience |
-| --- | --- | --- |
-| `OVERVIEW.md` | This file. Scope, non-goals, decision ledger. | Everyone, first |
-| `HANDOFF.md` | Sequenced build tasks, acceptance criteria, stop gates. | Build agent |
-| `DESIGN.md` | Binding syntax, check semantics, violation taxonomy, CLI surface. | Build agent |
-| `TECH_STACK.md` | Language, dependencies, project layout, testing. | Build agent |
-| `SPIKE-01-glob-binding.md` | The day-two falsification test for O1. | Repo owner |
-| `spike/glob-binding-probe.sh` | Executable probe for Spike 01. Validated against a positive control. | Repo owner |
-| `CONVENTIONS.md` | The agent contract. Ships *as part of the product*, not just as internal docs. | Diagram authors + agents |
-| `examples/repairs-platform/` | Worked example: `system.d2` + `.trestle.yml`. The Gate B test input. | Build agent |
+| File | Contains |
+| --- | --- |
+| [`DECISIONS.md`](DECISIONS.md) | This file. Scope, non-goals, the locked ledger, and the resolutions taken while building. |
+| [`DESIGN.md`](DESIGN.md) | Binding syntax, the five violation codes, config, the CLI surface. |
+| [`TOUR.md`](TOUR.md) | A repository walked from nothing to a working check. |
+| [`DOGFOODING.md`](DOGFOODING.md) | How to run a trial that can falsify the tool. |
+| [`../CONVENTIONS.md`](../CONVENTIONS.md) | The diagram-authoring contract. Ships with the product. |
+| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Setup, the architecture, and the constraints that are not negotiable by accident. |
+| [`../spike/README.md`](../spike/README.md) | Spike 01 — the falsification test for O1, and the probe that runs it. |
+| [`../examples/repairs-platform/`](../examples/repairs-platform/) | Worked example: a service tree with a bound diagram. |
+
+**Open questions and deferred work live in the issue tracker**, not here — see the
+[`roadmap`](https://github.com/timimsms/trestle/labels/roadmap) and
+[`limitation`](https://github.com/timimsms/trestle/labels/limitation) labels. The ledger records
+what was decided and why; the tracker records what has not been.
