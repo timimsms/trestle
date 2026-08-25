@@ -164,7 +164,7 @@ func TestSeverityOffIsNotABoolean(t *testing.T) {
 	}
 }
 
-// The four invalid-config classes from PHASE_2_PARSERS, plus the near-misses
+// The four invalid-config classes from docs/DESIGN.md §2, plus the near-misses
 // that share their code paths. Every one must name the offending key and, where
 // the key exists in the file, its line.
 func TestInvalidConfigs(t *testing.T) {

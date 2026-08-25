@@ -7,7 +7,7 @@ import (
 	"github.com/timimsms/trestle/internal/check"
 )
 
-// document is the `--format=json` payload. Its shape is fixed by PHASE_4
+// document is the `--format=json` payload. Its shape is fixed by docs/DESIGN.md §5
 // §"JSON output" and versioned by [SchemaVersion].
 //
 // Field-level notes, because each one is a decision:

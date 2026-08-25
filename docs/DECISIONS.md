@@ -1,80 +1,178 @@
-# Trestle — MVP Gameplan
+# Trestle — Overview
 
-**Derived from:** `docs/planning/handoff/` (OVERVIEW, DESIGN, TECH_STACK, HANDOFF, SPIKE-01).
-**Status:** both blocking gates cleared. Build is authorized through Phase 4.
-**Scope of "MVP":** Phases 1–4. Everything after is convenience and gets re-scoped against
-what the MVP teaches.
-
-This document is the plan. The per-phase task breakdowns live in `phases/`. Where this file
-and the handoff disagree, the handoff wins unless the disagreement is called out below as a
-resolved amendment.
+**Working name:** Trestle (a structure that holds up a span). CLI binary: `trestle`.
+**One line:** Keeps architecture diagrams honest by binding diagram nodes to real paths in the repo and failing CI when they diverge.
 
 ---
 
-## 1. What is being built
+## The problem being solved
 
-A single static Go binary, `trestle`, that reads architecture diagrams written in D2, reads
-binding directives embedded in those diagrams as magic comments, walks the repo once, and
-reports where the diagram and the filesystem disagree — with a CI-meaningful exit code.
+Architecture diagrams drift. Not because people are careless, but because nothing connects the diagram to the thing it describes. A service gets renamed, a module gets deleted, a new subsystem appears — and the diagram stays exactly as correct-looking as it was the day it was drawn.
 
-The whole product is one pure function:
+Diagram-as-code (D2, Mermaid, Structurizr) fixes *reviewability* — you can see the change in a PR. It does not fix *truth*. A D2 file can be perfectly version-controlled and completely wrong.
 
-```
-(fileListing, directives, nodeIDs, config) -> []Violation
-```
+Trestle adds the missing edge: a declared, checkable binding between a node in the diagram and a path in the codebase.
 
-Everything else — the CLI, the walker, the D2 parse, the renderer — is packaging around it.
-`internal/check` must never touch the filesystem. If a phase's implementation reaches for
-`os.ReadFile` inside `internal/check`, the seam is in the wrong place and the phase is not done.
+## What Trestle is not
 
-**The success criterion has not changed** and is not a build target: `trestle check` must fail
-on a real PR, at least once, for a reason nobody anticipated when the bindings were written.
-If it never fires it is decoration and should be deleted.
+These are deliberate exclusions, not backlog items.
 
----
+| Not | Why |
+| --- | --- |
+| A diagram editor | `d2 --watch` + an agent already covers authoring. Competing here is a losing race. |
+| A WYSIWYG / drag-drop surface | Layout is owned by the layout engine. This trade was accepted upfront; reintroducing manual positioning re-breaks agent editability. |
+| A rendering engine | D2 renders. Trestle embeds it and gets out of the way. |
+| A hosted or multi-user product | Local-first CLI on a repo. No accounts, no server, no realtime. |
+| A model/view system (Structurizr-style) | Genuinely valuable, explicitly deferred. See *Deferred* below. |
+| A history/versioning layer | Git. |
 
-## 2. Gate verdicts
+## Success criterion
 
-Both gates in HANDOFF.md are cleared. Full numbers are recorded as ledger amendments in
-`../handoff/OVERVIEW.md`; summarized here because they change the plan.
+> `trestle check` fails on a real PR, at least once in the first month, for a reason that was not anticipated when the bindings were written.
 
-### Gate A — Spike 01 (O1): **PROCEED, with a caveat**
-
-Probed a private 4,007-file monorepo (3,172 commits, all inside the window) at unit
-depths 1–4 over 180 days.
-
-| Depth | Q2 orphan | Q3 silent | Q4 new | Signal |
-| --- | --- | --- | --- | --- |
-| 1 | 1 | **0** | 16 | 17 |
-| 2 | 1 | **0** | 59 | 60 |
-| 3 | 0 | **0** | 105 | 105 |
-
-The result that would have voided the design — `Q3 > Q2`, silent gutting outweighing detectable
-drift — did not fire at any depth. **Q3 was zero everywhere.** Globs are not too coarse.
-
-The caveat, carried forward rather than buried: the signal is Q4-dominated and Q4 is inflated by
-a young repo growing (5–6 units at window start, 20–64 today), not by an established architecture
-drifting. Q2 is thin. This licenses the build; it does not prove the tool will fire often. Treat
-the OVERVIEW success criterion as genuinely at risk.
-
-**Consequence for the plan:** `discover:` seeding in `trestle init` (Phase 7) targets **depth 2**.
-Depth 3 fragments a real repo into 118 units, 35 of them holding ≤2 files — authoring burden, not
-architecture.
-
-### Gate B — D2 AST surface: **PASS (outcome 1)**
-
-`oss.terrastruct.com/d2 v0.7.2`. `d2compiler.Compile` is public; walking `g.Root.ChildrenArray`
-and reading `Object.AbsID()` recovers all 12 node IDs from the worked example **with container
-qualification intact**. Shapes, labels and all 10 edges come along for free. No regex fallback,
-no D2 grammar fork. Pin the version — TECH_STACK says it moves, and it does.
+If it never fires, it is decoration and should be deleted. This is the primary MVP evaluation gate, and it is deliberately falsifiable.
 
 ---
 
-## 3. Two spec gaps the gate probe surfaced
+## Decision ledger
 
-Gate B was supposed to be a 30-minute yes/no. It came back yes, and with two problems that would
-have detonated in Phase 3 if they had been discovered there. Both are resolved here; both are
-recorded as O8/O9 in the ledger.
+### Locked
+
+| # | Decision | Rationale |
+| --- | --- | --- |
+| L1 | **Local-first CLI operating on a repo.** No hosted component. | Ratified default from scoping. Team surface would invert the architecture; revisit only as a separate product. |
+| L2 | **D2 is the diagram format.** Not Mermaid, not Structurizr DSL. | Best available balance of human-authorability and agent-editability with real layout control. |
+| L3 | **Bindings live as magic comments inside the `.d2` file**, not in a sidecar file. | A sidecar bindings file is itself a drift surface. Co-location means one file to edit and one thing for an agent to keep consistent. |
+| L4 | **Bindings are path globs, not code symbols.** | Language-agnostic, no LSP dependency, near-zero cost. Correctness of this choice is the subject of Spike 01. |
+| L5 | **Node IDs must correspond to real code identifiers**, with display labels carried separately. | Established in scoping as the single highest-leverage practice for agent comprehension. Enforced by convention + lint, not by type system. |
+| L6 | **`trestle check` returns a CI-meaningful exit code.** | The check is worthless if it only ever runs interactively. |
+| L7 | **Agents edit by node ID, never by whole-file regeneration.** | Preserves reviewable diffs. Enforced via the shipped agent contract, not technically preventable. |
+| L8 | **Go, with D2 embedded as a library.** | Single static binary, no `d2` install prerequisite, no runtime. See TECH_STACK.md for the escape hatch. |
+| L9 | **`@infra` is a distinct directive from `@external`.** | Surfaced by the worked example. `@external` means third-party; a database or queue you own is neither third-party nor code-backed. Collapsing them would have forced a lie into every diagram with a Postgres box. |
+| L10 | **Shared paths are declared in `.trestle.yml` under `shared:`, not as a diagram directive.** | "This code is shared" is a fact about repo layout, true across every diagram. As a directive it would have to be repeated in each `.d2` file, or arbitrarily assigned to one. |
+| L11 | **`shared:` entries must be enumerated, never blanket.** | `lib/**` would swallow a future `lib/dispatch_engine/` — real architectural weight, silently exempted. Enumeration means new shared subsystems still fire `UNMAPPED`. Entries are ORPHAN-checked so the list can't rot. |
+| L12 | **Overlapping bindings are legal and get no violation code.** | Two nodes may honestly share a directory. Surfaced via `trestle explain --overlaps`. Keeps the taxonomy at five, which is the number people will actually learn. |
+
+### Open
+
+| # | Question | Needed by | Notes |
+| --- | --- | --- | --- |
+| ~~O1~~ | ~~Is glob-level binding granular enough to catch real drift?~~ | **RESOLVED** | **Proceed, with a caveat.** See amendment below. |
+| O2 | What is the discovery rule for `UNMAPPED`? | Day 4 | Per-repo convention (`app/services/*/`) vs. heuristic. Leaning explicit config — heuristics will generate noise and noise kills adoption. |
+| ~~O3~~ | ~~Should unbound nodes warn or fail by default?~~ | **RESOLVED** | **Warn.** In the worked example `UNBOUND` fired on a queue node — not an error, a modeling gap I hadn't considered. That is prompt-shaped, not failure-shaped. Fail would have trained a suppression reflex on the first diagram written. |
+| ~~O6~~ | ~~Cross-cutting code with no single owning node.~~ | **RESOLVED** | `shared:` in config, enumerated. See L10–L12. |
+| O7 | Does enumerated `shared:` stay practical at scale? | Day 4 | L11 assumes a repo has ~5–20 shared subsystems. Unmeasured. If a real repo needs 50+ entries, enumeration is unusable and L11 needs revisiting — though 50 shared subsystems is itself a finding about the codebase, not just about Trestle. Count `lib/*/` and `app/middleware/*/` before day 4. |
+| O4 | Monorepo behavior — one binding namespace or many? | Post-MVP | Deferred unless Spike 01 surfaces it as immediate. |
+| O5 | Does the preview pane justify its build cost in v1? | Day 3 | `d2 --watch` already renders. Trestle's preview only earns its place if it overlays check status onto the diagram. If that overlay slips, cut the pane entirely. |
+
+### Amendment — O1 verdict (Spike 01)
+
+**Date:** 2026-08-16 · **Run by:** build agent, at the repo owner's direction · **Probe:** `spike/glob-binding-probe.sh`
+
+Two repos were probed. Trestle itself returned zero at every depth — it is a docs-only repo with
+one commit, so it measures nothing and is reported here only to say it was tried. The real run was
+against a private monorepo (3,172 commits, 4,007 files, all inside the window) — the one repo to hand under
+enough structural change to produce signal.
+
+| Depth | Units today (at start) | Q2 orphan | Q3 silent | Q4 new | Signal |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 20 (5) | 1 | **0** | 16 | 17 |
+| 2 | 64 (6) | 1 | **0** | 59 | 60 |
+| 3 | 118 (13) | 0 | **0** | 105 | 105 |
+
+**Verdict: PROCEED.** The falsification criterion that would have voided the design — `Q3 > Q2`,
+silent gutting outweighing detectable drift — did not fire at any depth. Q3 was **zero
+everywhere**: no unit in this repo lost ≥70% of its files while surviving. The false-negative
+mode that kills the tool is not present here.
+
+**Caveat, recorded so it is not lost.** The signal is Q4-dominated, and Q4 is inflated: the repo
+had 5–6 units at the window start versus 20–64 today, so most of that count is a young repo
+growing rather than an established architecture drifting. Q2 — the clean-deletion signal — is
+genuinely thin (1, 1, 0). Read this as *"globs are not too coarse"* (a strong result, Q3=0),
+not as *"drift is rampant and the check will constantly fire"* (unproven). The OVERVIEW success
+criterion stays genuinely at risk and remains the MVP's evaluation gate.
+
+**Depth 2 is the right unit depth** for a monorepo of this shape — `ui/src`, `server/src`,
+`packages/db`, `packages/adapters`, `cli/src` are the boxes you would actually draw. Depth 3
+fragments into 118 units with 35 of them holding ≤2 files; that is authoring burden, not
+architecture. Seed `discover:` at depth 2 in `trestle init`.
+
+**Bears on O7.** Depth 2 yields 64 units in a 4k-file repo. If even a fifth of those are shared
+plumbing, the enumerated `shared:` list runs to ~13 entries — inside L11's assumed 5–20 range,
+so L11 survives, but only just. Re-check O7 against a second repo before v1.
+
+### Amendment — Gate B verdict (D2 AST surface)
+
+**Date:** 2026-08-16 · **d2 version:** `oss.terrastruct.com/d2 v0.7.2`
+
+**PASS — outcome 1: public AST, container paths recoverable.** `d2compiler.Compile` is public
+and stable-looking; walking `g.Root.ChildrenArray` recursively and reading `Object.AbsID()`
+recovers all **12** node IDs from `examples/repairs-platform/system.d2` with container
+qualification intact (`platform.svc_work_orders`, not `svc_work_orders`). Shapes, labels and all
+10 edges come along for free. No regex fallback needed; no D2 grammar fork.
+
+The probe surfaced **two spec gaps that Task 2 must resolve before the check engine is written**:
+
+- **New O8 — qualified vs. unqualified node IDs.** The AST yields `platform.svc_work_orders`.
+  Every directive in the worked example says `@bind svc_work_orders`. Under strict string
+  matching, *all six binds in the shipped example are `DANGLING`* and `platform` is `UNBOUND`.
+  Either the example is wrong or matching must resolve an unqualified ID against a unique
+  suffix. Resolved in GAMEPLAN as: **suffix match, ambiguity is `SYNTAX`.**
+- **New O9 — are containers nodes?** `platform` is a node in the AST with no directive, so it
+  fires `UNBOUND`, as does `tenant`. A container that groups five bound services is a grouping
+  device, not an unowned subsystem. Resolved in GAMEPLAN as: **a container whose descendants are
+  all accounted for is itself accounted for.** No new violation code; L-taxonomy stays at five.
+
+### Amendment — first dogfood result
+
+**Date:** 2026-08-20 · **Target:** Trestle itself, first non-fixture config in existence
+
+Trestle was pointed at its own repo the moment `check` worked. The first run produced four
+findings from a config written to describe the repo honestly rather than to pass:
+
+| Finding | Verdict |
+| --- | --- |
+| `UNMAPPED internal/render/` | **True positive.** An empty package directory left over from the Phase 0 scaffold. Git does not track empty directories, so it was invisible to every other tool in the repo. Deleted. |
+| `UNBOUND author`, `UNBOUND repo` | **Correct, prompt-shaped.** Two diagram nodes that are genuinely not code. A modeling gap, not an error — exactly what O3 predicted when it resolved `UNBOUND` to *warn*. Fixed with `@external`. |
+| `UNBOUND engine.run.the only place that orchestrates I/O` | **The interesting one — see below.** |
+
+That third node does not exist in the source. It exists because a tooltip read
+`tooltip: the pipeline; the only place that orchestrates I/O`, and **`;` is a statement
+separator in D2**. The compiler split the line and turned the trailing prose into a child node.
+The diagram rendered without complaint; the phantom node was invisible to review; the only reason
+anyone found out is that Trestle asked what code backed it.
+
+**This is the success criterion firing, on the first non-fixture run.** OVERVIEW asks for a
+failure "for a reason that was not anticipated when the bindings were written," and nobody
+writing those bindings anticipated D2 statement-separator semantics inside a tooltip. The tool
+found a real defect in a real diagram that a human reviewer would not have caught, and it did so
+by asking a question — *what code is this?* — that no linter or renderer asks.
+
+Two caveats, so this is not over-read:
+
+1. **Sample size one, and the repo is the tool's own.** One catch is not a track record. The
+   Gate A caveat stands and the criterion says *"on a real PR, in the first month"* — Trestle
+   still needs to run somewhere it was not designed alongside.
+2. **The catch was UNBOUND, a warning.** Under default severity this finding does not fail a
+   build. `make self-check` runs `--strict` for exactly this reason.
+
+`.trestle.yml` and `docs/architecture/system.d2` now live in this repo and `make self-check` runs
+in CI as a required job. If Trestle will not hold itself to the standard it recommends, it has no
+business recommending it.
+
+
+---
+
+## Resolutions
+
+The ledger above fixes *what* Trestle is. These fix *how it behaves* in the cases the ledger
+left open. They are numbered O8 onward, continuing the open-question sequence, and none of
+them added a violation code or a command.
+
+
+These are the semantics the ledger did not pin down, and the implementation had to. Each was
+found by building or by running the tool against a real repository, and each is recorded with
+the evidence that forced it — a resolution whose reason is lost gets re-litigated.
 
 ### O8 — qualified vs. unqualified node IDs
 
@@ -296,191 +394,26 @@ command.
 
 ---
 
-## 4. Architecture
+---
 
-```
-conventions.go          package `trestle`: go:embed of CONVENTIONS.md, nothing else.
-cmd/trestle/            main + cobra wiring. Thin. No logic.
-internal/
-  config/               .trestle.yml load, validate, defaults, root discovery
-  directive/            magic-comment line scanner
-  nodes/                D2 AST -> node IDs (d2compiler)
-  walk/                 the single filesystem walk. All I/O lives here.
-  check/                THE PRODUCT. Pure. Zero I/O. Heavily tested.
-  render/               D2 library wrapper (Phase 6)
-  scaffold/             `trestle init` — layout detection, the emitted files (Phase 7)
-  report/               human + json formatting, golden-tested
-  expected/             fixture EXPECTED parser, shared by Phases 3 and 4
-  integration/          cross-seam guards — where two packages must agree
-testdata/repos/         ten fixture trees
-examples/repairs-platform/   the worked example — a live test input, not a doc
-spike/                  glob-binding-probe.sh (Gate A, keep for re-runs)
-```
+### Deferred (named, so they don't get re-litigated)
 
-Dependency direction is one-way: `cmd` → everything; `check` → nothing but `config`,
-`directive`, `nodes` types. `check` importing `walk` is a design failure, and CI should
-eventually enforce that with an import-graph test.
-
-**Restating the I/O rule precisely**, because the original phrasing contradicted itself: "all
-filesystem I/O lives in `walk`" was written alongside explicit permission for `directive`,
-`nodes`, and `config` to open their own named input file. The rule that is actually meant:
-
-> **The repo walk lives in `walk`. `check` does no I/O at all.**
-
-`directive`, `nodes`, and `config` each expose a pure `Parse(path, src []byte)` primary with a
-thin `ParseFile` convenience. That is the shape they were built in, and it is the shape Phase 4
-should wire.
-
-**Pinned dependencies** (TECH_STACK, confirmed by Gate B):
-
-| Concern | Module |
-| --- | --- |
-| D2 | `oss.terrastruct.com/d2 v0.7.2` — pinned exactly |
-| CLI | `spf13/cobra` |
-| Config | `goccy/go-yaml` |
-| Globs | `bmatcuk/doublestar/v4` — non-negotiable, stdlib has no `**` |
-| Walk | stdlib `io/fs.WalkDir` |
-| Watch | `fsnotify/fsnotify` — Phase 6 only |
-| Directives | stdlib. Line scan + `strings.Fields`. No parser generator. |
+- **Structurizr-style model/view separation.** Real value, wrong time. Pays off only once there are enough views to contradict each other. v2.
+- **Symbol-level binding via language servers.** Only if Spike 01 proves globs too coarse — and if so, that is a scope change, not an addition.
+- **Generated diagrams** (derive nodes from dependency graphs rather than checking hand-written ones). Strictly more powerful, strictly larger. v2+.
+- **Non-D2 backends** (Mermaid, PlantUML export). Trivial later, distracting now.
 
 ---
 
-## 5. Phase map
+## Document map
 
-| Phase | File | Delivers | Blocks on | MVP |
-| --- | --- | --- | --- | --- |
-| 0 | `PHASE_0_GATES.md` | Gate A + B verdicts, O8/O9 resolutions, repo scaffold | — | ✅ done |
-| 1 | `PHASE_1_FIXTURES.md` | Ten fixture repos + `EXPECTED` contracts | 0 | ✅ done |
-| 2 | `PHASE_2_PARSERS.md` | `directive`, `nodes`, `config`, `walk` | 0 | ✅ done |
-| 3 | `PHASE_3_CHECK_ENGINE.md` | `internal/check` — the product | 1, 2 | ✅ done |
-| 4 | `PHASE_4_CLI.md` | `trestle check`, human + json, golden files | 3 | ✅ done |
-| — | **← STOP GATE. The MVP is here. Dogfood before Phase 5.** | | | |
-| 5 | `PHASE_5_EXPLAIN.md` | `trestle explain`, `--overlaps` | 4 | — |
-| 6 | `PHASE_6_RENDER.md` | `trestle render`, `--watch` | 4 | — |
-| 7 | `PHASE_7_INIT.md` | `trestle init`, CONVENTIONS emission | 4, 5 | — |
-
-**Phases 1 and 2 are independent and run in parallel.** This is deliberate and it is the reason
-HANDOFF orders fixtures first: writing the expected outputs before the engine forces the engine's
-interface to be pinned down by its contract rather than by its implementation. Phase 3 must not
-start until both land, because Phase 3's definition of done is *"every fixture produces its
-`EXPECTED`"* — an engine written against a moving fixture set proves nothing.
-
-Within Phase 2 the four packages are independent of each other and can be split further.
-
----
-
-## 6. The violation taxonomy is closed
-
-Five codes. `ORPHAN`, `UNMAPPED`, `DANGLING`, `UNBOUND`, `SYNTAX`. Severity is overridable
-per-code from config; `UNBOUND` defaults to `warn`.
-
-Exit codes: `0` clean (warnings allowed), `1` failing violations, `2` tool error. **Keep 1 and 2
-distinct.** Conflating them trains people to ignore both.
-
-Standing constraints, carried verbatim from HANDOFF and non-negotiable without a ledger entry:
-
-- **Do not add a sixth violation code.** New failure modes fold into existing codes or surface
-  through `explain`.
-- **Do not add a fifth top-level command** without writing down why.
-- **Do not build the preview pane** unless O5 resolves in its favor.
-- **Do not implement Structurizr-style model/view separation.** v2, deliberately.
-- **`internal/check` stays I/O-free.**
-- **Do not hand-roll a D2 parser.** Gate B removed the only excuse for it.
-
-**Every violation carries a runnable hint.** This is a contract, not a nicety, and it is
-golden-tested. A failing check that does not tell you what to type is one people learn to route
-around.
-
----
-
-## 7. Definition of done, per phase
-
-A phase is done when its acceptance criteria in the phase file pass — not when the code exists.
-Across all phases:
-
-- `go build ./...` and `go vet ./...` clean.
-- `go test ./...` passes. New logic ships with tests in the same change, not as a follow-up.
-- `gofmt -l .` empty.
-- No new dependency without a line in the phase file saying why stdlib was insufficient.
-- `internal/check` tests run with no filesystem access. If a check test needs a `testdata` dir,
-  the test is in the wrong package.
-
----
-
-## 8. Risks, ranked
-
-| Risk | Why it matters | Mitigation |
+| File | Contains | Audience |
 | --- | --- | --- |
-| **Success criterion never fires** | The tool is decoration and OVERVIEW says delete it | Gate A caveat is explicit: Q4 was inflated. Dogfood on a real repo the moment Phase 4 lands, before building Phases 5–7 |
-| **O8 suffix matching is too clever** | Silent mis-binding after a rename is the exact bug class this tool exists to catch | Ambiguity is `SYNTAX`, never a silent pick. Fixture `nested/` must cover both the resolving and the ambiguous case |
-| **`UNMAPPED` is noisy** | A noisy check gets `--no-verify`'d within a week; noise kills adoption | `discover:` is explicit config, not heuristic (O2 resolved). Depth 2 per Gate A |
-| **Trailing-slash glob mismatch silences `UNMAPPED` entirely** | Verified: `app/services/*/` matches `app/services/billing/` but **not** `app/services/billing`. The shipped example config uses the trailing-slash form. Bare directory paths would make every `discover` rule match nothing and the check pass while seeing nothing — a silent failure in the half of the product that catches *new* code | `walk` emits directories **flagged** (`Entry.IsDir`), with no trailing slash; `check` synthesizes the slash on both sides and accepts `*`, `*/`, `**` as equivalent authoring forms. A `discover` rule matching zero units fires `ORPHAN`, so this can never fail silently again. Pinned by `integration.TestDiscoverGlobNeedsTrailingSlash` |
-| **d2 v0.7.2 AST breaks on upgrade** | Node extraction is load-bearing | Pinned exactly. `nodes` package has a version-canary test against the worked example |
-| **200ms/100k-file target missed** | A check slower than a lint rule gets moved to nightly, and nightly stops blocking the PR that broke it | Single walk, all globs applied to one listing. Benchmark is a Phase 3 acceptance criterion, not a Phase 4 afterthought |
-| **Enumerated `shared:` doesn't scale (O7)** | L11 becomes unusable | Gate A suggests ~13 entries for a 4k-file repo — inside L11's range, but only just. Re-probe a second repo before v1 |
-
----
-
-## 9. Stop-gate report — MVP complete
-
-`trestle check` builds, runs, and matches all ten fixtures plus the worked example in both
-formats. `go build`, `go vet`, `gofmt`, `go test`, `go test -race`, and `golangci-lint` are clean.
-End-to-end on a 100k-file repo is **37–71ms** against a 200ms budget; `internal/check` alone is
-**2.5ms**, and it is I/O-free with an import-graph test that fails if that ever changes.
-
-### What surprised us
-
-- **Gate B was meant to be a 30-minute yes/no.** It passed and produced two spec gaps (O8, O9)
-  that would have detonated in Phase 3. Without them the shipped worked example fails its own
-  check with 6 `DANGLING` and 2 `UNBOUND`.
-- **A subtree is not the contiguous run after its directory.** `app/services/billing-old` sorts
-  *between* `app/services/billing` and its children, because `-` < `/` in ASCII. The obvious
-  implementation reports a bound service as `UNMAPPED` and an unrelated sibling as owned.
-- **"One walk, all globs on one listing" is necessary and not sufficient.** It fixes the I/O and
-  says nothing about matching cost; naive matching would have blown the budget at 20 bindings.
-  Prefix-narrowing against the sorted listing gave an 82× reduction.
-- **Three documents described behavior the tool does not have**, in ways that would have misled
-  the next reader: two claimed `walk` emits trailing slashes, and DESIGN §5 grouped `UNMAPPED`
-  under the diagram. All corrected against the implementation, not the other way round.
-
-### Locked decisions the implementation pushed back on
-
-- **L12 is currently unobservable.** Its justification is "surfaced via `explain --overlaps`",
-  which the MVP does not ship. The `overlap/` fixture can only prove a negative — it passes
-  against an engine with no overlap detection at all. Not wrong; not yet true.
-- **L11/O7 remains unexercised.** Every fixture `shared:` list has 1–2 entries. Whether
-  enumeration scales is still unmeasured and still needs a second real repo.
-- **DESIGN §5 anticipated a field the engine does not carry** — the as-written suffix is
-  discarded at resolution, so both formats print the fully-qualified ID.
-- **Config-sourced violations have no line number.** `config` already tracks `seqLine("shared", i)`
-  for validation errors and discards it, so `.trestle.yml` findings are not clickable. Small
-  change, real ergonomic payoff, not yet made.
-
-### Closed at the gate
-
-A repo could set `severity: {ORPHAN: off, UNMAPPED: off}` and get `0 failures, 0 warnings` and
-exit 0 from a check that inspected nothing — the same silent-green family as a config matching
-zero diagrams, which Phase 4 was explicitly told to close. `check.DisabledCodes` is now reported
-on the summary line (`0 failures, 0 warnings (ORPHAN off)`) and as a `disabled` array in JSON,
-pinned by `internal/integration/disabled_test.go`. It is not a sixth code: disabling a code is
-legal, doing it invisibly is not.
-
-### The next move is dogfooding, not Phase 5
-
-Every violation shape produced so far came from a fixture written on purpose. Trestle has no
-`.trestle.yml` of its own and has never run against a repo with real churn. Gate A's caveat —
-Q4-inflated signal, thin Q2 — means the OVERVIEW success criterion is genuinely at risk, and it
-is the MVP's evaluation gate. Building `explain`, `render`, and `init` on a check that never fires
-is three phases of work on a tool OVERVIEW says to delete.
-
----
-
-## 10. Reporting back
-
-At the Phase 4 stop gate, report three things — the third matters most:
-
-1. What passed.
-2. What surprised you.
-3. **Which locked decisions the implementation pushed back on.** L1–L12 were made without code.
-   Gate B already broke two unstated assumptions inside thirty minutes. Naming which decisions
-   were wrong, and why, is worth more than quietly routing around them.
+| `OVERVIEW.md` | This file. Scope, non-goals, decision ledger. | Everyone, first |
+| `HANDOFF.md` | Sequenced build tasks, acceptance criteria, stop gates. | Build agent |
+| `DESIGN.md` | Binding syntax, check semantics, violation taxonomy, CLI surface. | Build agent |
+| `TECH_STACK.md` | Language, dependencies, project layout, testing. | Build agent |
+| `SPIKE-01-glob-binding.md` | The day-two falsification test for O1. | Repo owner |
+| `spike/glob-binding-probe.sh` | Executable probe for Spike 01. Validated against a positive control. | Repo owner |
+| `CONVENTIONS.md` | The agent contract. Ships *as part of the product*, not just as internal docs. | Diagram authors + agents |
+| `examples/repairs-platform/` | Worked example: `system.d2` + `.trestle.yml`. The Gate B test input. | Build agent |

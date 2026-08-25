@@ -15,7 +15,7 @@ import (
 // Hints are a contract, not a nicety. Every violation carries one and every one
 // of them names something the author can run or paste. A failing check that
 // does not tell you what to type is one people learn to route around, so the
-// shapes below are fixed by PHASE_3 §"Every violation carries a hint" and
+// shapes below are fixed by docs/DESIGN.md §5 and
 // golden-tested in Phase 4.
 
 // syntaxTarget recovers the node ID a malformed directive was probably about,

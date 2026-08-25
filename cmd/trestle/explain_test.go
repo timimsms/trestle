@@ -117,7 +117,7 @@ func TestStatusesAreTheSixAndNotViolationCodes(t *testing.T) {
 	}
 }
 
-// --- PHASE_5 acceptance -------------------------------------------------
+// --- docs/DESIGN.md §5 acceptance -------------------------------------------------
 
 // "explain platform.svc_work_orders on the worked example lists 2 globs with
 // their current match counts."

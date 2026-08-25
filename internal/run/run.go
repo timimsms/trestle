@@ -3,7 +3,7 @@
 // configured diagram globs against that single listing, parse each diagram, and
 // hand the result to the check engine.
 //
-// It exists so that `cmd/trestle` can stay what PHASE_4 says it must be — find
+// It exists so that `cmd/trestle` can stay what docs/DESIGN.md §5 says it must be — find
 // root, load config, walk, parse, compile, call check, format, exit — without
 // any of those steps being a decision made in `cmd/`. Two of them are decisions:
 //
@@ -15,7 +15,7 @@
 //     failure mode the whole tool exists to prevent.
 //
 // `explain`, `render` and `init` need the same context. Reinventing the loop in
-// each command is how the per-diagram coverage bug GAMEPLAN §3 warns about gets
+// each command is how the per-diagram coverage bug docs/DECISIONS.md, Resolutions warns about gets
 // reintroduced, so the loop lives here once.
 //
 // Every error this package returns is a tool error — exit 2 — never a
@@ -58,7 +58,7 @@ type Context struct {
 
 // NoDiagramsError reports that `diagrams:` matched no file.
 //
-// This is exit 2 and not a clean run on purpose (PHASE_4 §"Command wiring"):
+// This is exit 2 and not a clean run on purpose (docs/DESIGN.md §5):
 // with no diagrams there are no nodes, no directives and therefore no
 // violations, so every other outcome would be a green check that read nothing.
 type NoDiagramsError struct {
