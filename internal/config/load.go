@@ -237,12 +237,25 @@ func validateShared(path string, loc *locator, f file) ErrorList {
 		if !ok {
 			continue
 		}
+		// The example is a placeholder, not a guess at directory names.
+		//
+		// It used to interpolate the offending prefix into two invented names —
+		// `packages/http_client/**, packages/logging/**`. On a real repo holding
+		// `packages/http-client` (hyphen) one half was wrong and the other
+		// happened to be right, which made a canned string read as though it had
+		// been derived from the tree. Pasting it produced a fresh ORPHAN.
+		//
+		// Config validation runs before the walk, so there is no listing here to
+		// derive real names from. A hint that cannot know the answer should look
+		// like it cannot know: `<subsystem>` is a blank to fill in, and nobody
+		// pastes it expecting it to work.
 		scope := "the repo root"
-		example := "lib/http_client/**, lib/logging/**"
+		prefixed := "lib"
 		if prefix != "" {
 			scope = prefix + "/"
-			example = prefix + "/http_client/**, " + prefix + "/logging/**"
+			prefixed = prefix
 		}
+		example := fmt.Sprintf("%s/<subsystem>/**, one line per subsystem", prefixed)
 		errs = append(errs, &Error{
 			Path: path, Line: loc.seqLine("shared", i), Key: fmt.Sprintf("shared[%d]", i),
 			Msg:  fmt.Sprintf("blanket entry %q exempts everything under %s, including subsystems that do not exist yet", entry, scope),

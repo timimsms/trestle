@@ -538,3 +538,36 @@ func equal(a, b []string) bool {
 	}
 	return true
 }
+
+// A hint that cannot know the answer must not look like it does.
+//
+// This one used to interpolate the offending prefix into two invented
+// directory names — `packages/http_client/**, packages/logging/**`. On a real
+// repo holding `packages/http-client` (hyphen) one half was wrong and the other
+// happened to be right, so a canned string read as though it had been derived
+// from the tree. Pasting it produced a fresh ORPHAN.
+//
+// Config validation runs before the walk, so there is no listing to derive real
+// names from. The hint says `<subsystem>` instead, which nobody pastes
+// expecting it to work.
+func TestBlanketSharedHintDoesNotInventDirectoryNames(t *testing.T) {
+	_, err := config.Parse("/repo/.trestle.yml", []byte(
+		"version: 1\ndiagrams:\n  - docs/architecture/*.d2\nshared:\n  - \"packages/**\"\n"))
+	if err == nil {
+		t.Fatal("a blanket shared: entry must be rejected")
+	}
+
+	got := err.Error()
+	if !strings.Contains(got, "<subsystem>") {
+		t.Errorf("hint does not use a placeholder: %s", got)
+	}
+	for _, invented := range []string{"http_client", "logging"} {
+		if strings.Contains(got, invented) {
+			t.Errorf("hint invents the directory name %q, which may not exist: %s", invented, got)
+		}
+	}
+	// The prefix the user actually wrote is real and worth echoing.
+	if !strings.Contains(got, "packages/") {
+		t.Errorf("hint drops the prefix the user wrote: %s", got)
+	}
+}
