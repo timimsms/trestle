@@ -7,7 +7,7 @@ import (
 	"github.com/timimsms/trestle/internal/config"
 )
 
-// Color is opt-in on evidence, never on assumption. PHASE_4 is blunt about why:
+// Color is opt-in on evidence, never on assumption. docs/DESIGN.md §5 is blunt about why:
 // CI logs full of ANSI escapes are how people stop reading CI logs. So the only
 // thing that turns color on is a writer that is demonstrably a terminal, and
 // two environment conventions can still turn it off.

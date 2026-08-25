@@ -27,6 +27,10 @@ exclude:
   # excluded rather than shared because a `shared:` entry matching zero files
   # is an ORPHAN, and it would be one the moment the line above takes effect.
   - "internal/integration/**"
+  # Agent worktrees. Trestle walks the filesystem, not git's index, so a
+  # gitignored directory is still counted — 226 files here moved the coverage
+  # denominator from 96 to 179 without a line of this repo changing.
+  - ".claude/**"
 
 severity:
   UNBOUND: warn

@@ -18,3 +18,7 @@ docs/architecture/rendered/
 # Editors
 .idea/
 *.swp
+
+# Agent worktrees. Not part of the repo; Trestle excludes them in .trestle.yml
+# too, since it walks the filesystem rather than git.
+.claude/

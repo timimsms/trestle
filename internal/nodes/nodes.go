@@ -2,14 +2,14 @@
 //
 // This is the one place in Trestle that must actually understand D2. It uses
 // the upstream compiler (`d2compiler.Compile`) rather than a hand-rolled parser
-// or a regex: Gate B (PHASE_0_GATES §0.2) established that walking
+// or a regex: Gate B (docs/DECISIONS.md, Gate B) established that walking
 // `g.Root.ChildrenArray` and reading `Object.AbsID()` recovers every node with
 // its container qualification intact. There is no fallback path, by design — if
 // the compiler cannot read a diagram, D2 itself cannot render it either.
 //
 // The package decides nothing. It returns the node set and the parent/child
 // relation; `internal/check` decides what is a violation. The parent relation
-// is not optional decoration: the O9 container rule (GAMEPLAN §3) suppresses
+// is not optional decoration: the O9 container rule (docs/DECISIONS.md, Resolutions) suppresses
 // UNBOUND for a container whose descendants are all accounted for, and that
 // cannot be evaluated from a flat list of IDs.
 package nodes
@@ -146,7 +146,7 @@ func (d *Diagram) Descendants(id string) []string {
 }
 
 // Candidates returns the node IDs that a directive's node ID refers to, per the
-// O8 resolution rule (GAMEPLAN §3):
+// O8 resolution rule (docs/DECISIONS.md, Resolutions):
 //
 //   - an exact match on a fully-qualified ID wins outright and is returned alone;
 //   - otherwise, every node whose ID ends with "." + id is a candidate, so

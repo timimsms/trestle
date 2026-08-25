@@ -29,7 +29,7 @@ import (
 )
 
 // SchemaVersion is the `version` field of the JSON document. It is 1 from day
-// one (PHASE_4 §"JSON output"): this output is consumed by CI and by agents,
+// one (docs/DESIGN.md §5): this output is consumed by CI and by agents,
 // and adding a version after the fact means guessing what produced a payload.
 const SchemaVersion = 1
 

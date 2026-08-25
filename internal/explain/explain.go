@@ -15,7 +15,7 @@
 //
 // Nothing here computes an exit code and nothing here decides anything. A node
 // with three failing violations and a node with none are both printed; the
-// caller exits 0 either way (PHASE_5 §"Constraints"). Overlaps in particular are
+// caller exits 0 either way (docs/DESIGN.md §5). Overlaps in particular are
 // informational by construction, which is the promise L12 made when it declined
 // to spend a sixth violation code on them.
 //

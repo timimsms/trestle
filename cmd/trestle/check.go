@@ -12,7 +12,7 @@ import (
 
 // newCheckCmd builds `trestle check`.
 //
-// The order of operations is PHASE_4 §"Command wiring" and every step's failure
+// The order of operations is docs/DESIGN.md §5 and every step's failure
 // is exit 2: find `.trestle.yml` by walking up from CWD, load and validate it,
 // walk the repo once, resolve `diagrams:` against that one listing, parse each
 // diagram, run the engine, format, exit. `internal/run` performs the first five

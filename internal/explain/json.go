@@ -8,7 +8,7 @@ import (
 	"github.com/timimsms/trestle/internal/report"
 )
 
-// The JSON view is the one PHASE_5 calls load-bearing: `explain` is what an
+// The JSON view is the one docs/DESIGN.md §5 calls load-bearing: `explain` is what an
 // agent runs to orient before editing a node, and it will be read by a program
 // more often than by a person. It follows `internal/report`'s conventions
 // deliberately — `"version": 1` from day one, absent strings as null rather than

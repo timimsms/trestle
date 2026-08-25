@@ -5,8 +5,8 @@ they diverge. Read these in order before making changes:
 
 1. `docs/planning/mvp/GAMEPLAN.md` — the build plan, gate verdicts, and architecture
 2. `docs/planning/mvp/phases/PHASE_<N>_*.md` — the phase you are working in
-3. `docs/planning/handoff/OVERVIEW.md` — scope and the locked decision ledger L1–L12
-4. `docs/planning/handoff/DESIGN.md` — binding syntax and check semantics
+3. `docs/DECISIONS.md` — scope and the locked decision ledger L1–L12
+4. `docs/DESIGN.md` — binding syntax and check semantics
 5. `CONVENTIONS.md` — the diagram-authoring contract that ships with the product
 
 ## Locked decisions are locked
