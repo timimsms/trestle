@@ -411,7 +411,6 @@ command.
 | --- | --- |
 | [`DECISIONS.md`](DECISIONS.md) | This file. Scope, non-goals, the locked ledger, and the resolutions taken while building. |
 | [`DESIGN.md`](DESIGN.md) | Binding syntax, the five violation codes, config, the CLI surface. |
-| [`TOUR.md`](TOUR.md) | A repository walked from nothing to a working check. |
 | [`DOGFOODING.md`](DOGFOODING.md) | How to run a trial that can falsify the tool. |
 | [`../CONVENTIONS.md`](../CONVENTIONS.md) | The diagram-authoring contract. Ships with the product. |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Setup, the architecture, and the constraints that are not negotiable by accident. |

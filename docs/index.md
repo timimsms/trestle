@@ -18,7 +18,6 @@ go install github.com/timimsms/trestle/cmd/trestle@v0.1.0
 
 | | |
 | --- | --- |
-| [**Tour**](TOUR.md) | A repository walked from nothing to a working check, with the real output at each step |
 | [**Design**](DESIGN.md) | Binding syntax, the five violation codes, config, the CLI surface |
 | [**Decisions**](DECISIONS.md) | Why it is shaped this way — the locked ledger, the open questions, and the resolutions taken while building |
 | [**Dogfooding**](DOGFOODING.md) | How to run a trial that can actually falsify the thing |
