@@ -4,6 +4,45 @@ Notable changes per release. Anything that changes what `trestle check` reports 
 repo is called out as **behaviour change**, because that is the line between a release you can take
 without reading and one you cannot.
 
+## v0.1.1 — 2026-08-25
+
+Hints and detection. No change to what `check` reports on an unchanged repo — only to what it
+proposes, and to what its hints say.
+
+All three fixes came from the same place: **writing the guided tour**. Walking the tool end to end
+as a newcomer found things that eleven controlled agent trials and three field trials had not,
+which is a decent argument for the tour existing.
+
+### Fixed
+
+- **A JS `lib/` layer was undiscoverable.** `init` proposed `packages/*/`, `apps/*/` and `src/*/`
+  for JS repos but not `lib/*/`, which was Rails-only — so a repo without workspaces got nothing
+  proposed for its shared layer and `UNMAPPED` could never fire there. The coverage clause does not
+  catch this: the other rules matched fine, so the number reads healthy while a whole directory
+  goes unwatched. ([#29](https://github.com/timimsms/trestle/pull/29))
+- **The blanket-`shared:` hint invented directory names.** Rejecting `shared: ["packages/**"]` is
+  correct, but the hint suggested `packages/http_client/**, packages/logging/**` — a fixed string
+  with your prefix interpolated in. On a repo holding `packages/http-client` half of it was wrong,
+  and the half that was right made the whole thing read as derived from the tree. Now a
+  placeholder. ([#28](https://github.com/timimsms/trestle/pull/28))
+- **The `UNBOUND` hint ignored the node it was about**, closing with "for a database or queue the
+  answer is usually `@infra`" even on a node named `ext_stripe`. It now reads the ID's prefix.
+  ([#29](https://github.com/timimsms/trestle/pull/29))
+
+The through-line: **a hint that cannot know something should not sound like it does.** "Every
+violation carries a runnable hint" is a golden-tested contract, and a confidently wrong hint costs
+more than a vague one.
+
+### Documentation
+
+- [**A guided tour**](https://timimsms.github.io/trestle/TOUR) — a repository walked from nothing
+  to a working check, then broken on purpose, with real output at every step. Including a section
+  on what the check will *not* catch, demonstrated rather than asserted.
+- A [documentation site](https://timimsms.github.io/trestle/), served from `docs/`.
+- The build's planning tree is retired. What outlived it was promoted: `docs/DESIGN.md`,
+  `docs/DECISIONS.md`, and the spike beside the script that runs it. 52 stale citations in Go
+  comments now point at the new homes.
+
 ## v0.1.0 — 2026-08-24
 
 First tagged release. Four commands, five violation codes.
